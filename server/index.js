@@ -1,19 +1,86 @@
+console.log('=== STARTING SMART HUI SERVER ===');
+console.log('Loading required modules...');
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const complaintRoutes = require('./routes/complaints');
-const notificationRoutes = require('./routes/notifications');
-const passwordResetRoutes = require('./routes/passwordReset');
-const adminRoutes = require('./routes/admin');
+console.log('Core modules loaded successfully');
 
 // Load environment variables
 dotenv.config();
+console.log('Environment variables loaded');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT || 5000);
+
+// Validate critical environment variables
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  WARNING: JWT_SECRET not set, using default (not secure for production)');
+  process.env.JWT_SECRET = 'fallback-jwt-secret-change-this-in-production';
+}
+
+if (!process.env.MONGODB_URI) {
+  console.warn('⚠️  WARNING: MONGODB_URI not set, using localhost');
+}
+
+console.log('Environment validation completed');
+
+console.log('Loading route modules...');
+
+// Import routes with error handling
+let authRoutes, userRoutes, complaintRoutes, notificationRoutes, passwordResetRoutes, adminRoutes;
+
+try {
+  authRoutes = require('./routes/auth');
+  console.log('✓ Auth routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load auth routes:', err.message);
+  throw err;
+}
+
+try {
+  userRoutes = require('./routes/users');
+  console.log('✓ User routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load user routes:', err.message);
+  throw err;
+}
+
+try {
+  complaintRoutes = require('./routes/complaints');
+  console.log('✓ Complaint routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load complaint routes:', err.message);
+  throw err;
+}
+
+try {
+  notificationRoutes = require('./routes/notifications');
+  console.log('✓ Notification routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load notification routes:', err.message);
+  throw err;
+}
+
+try {
+  passwordResetRoutes = require('./routes/passwordReset');
+  console.log('✓ Password reset routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load password reset routes:', err.message);
+  throw err;
+}
+
+try {
+  adminRoutes = require('./routes/admin');
+  console.log('✓ Admin routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load admin routes:', err.message);
+  throw err;
+}
+
+console.log('All route modules loaded successfully');
 
 const app = express();
 
@@ -94,11 +161,40 @@ if (process.env.NODE_ENV === 'production') {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error('=== ERROR OCCURRED ===');
+  console.error('Error message:', err.message);
+  console.error('Error stack:', err.stack);
+  console.error('Request URL:', req.url);
+  console.error('Request method:', req.method);
+  console.error('======================');
+  
+  res.status(500).json({ 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    url: req.url,
+    method: req.method
+  });
+});
+
+// Global error handlers
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('🚨 Uncaught Exception:', error.message);
+  console.error('Stack:', error.stack);
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+try {
+  app.listen(PORT, () => {
+    console.log(`✅ Server running successfully on port ${PORT}`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📊 Health check available at: /api/health`);
+    console.log('=== STARTUP COMPLETE ===');
+  });
+} catch (error) {
+  console.error('❌ Failed to start server:', error.message);
+  process.exit(1);
+}
