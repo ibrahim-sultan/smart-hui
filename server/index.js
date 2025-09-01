@@ -120,6 +120,23 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Debug endpoint to check build status
+app.get('/api/debug/build', (req, res) => {
+  const fs = require('fs');
+  const buildPath = path.join(__dirname, '../client/build');
+  const indexPath = path.join(buildPath, 'index.html');
+  
+  res.json({
+    environment: process.env.NODE_ENV,
+    buildPath: buildPath,
+    buildExists: fs.existsSync(buildPath),
+    indexExists: fs.existsSync(indexPath),
+    workingDirectory: __dirname,
+    processDir: process.cwd(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Serve static files from React build
 if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '../client/build');
