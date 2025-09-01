@@ -14,6 +14,12 @@ const AdminLogin = () => {
   // Redirect if admin is already logged in
   useEffect(() => {
     if (admin) {
+      // Check if first login first
+      if (admin.isFirstLogin === true) {
+        navigate('/admin/change-password');
+        return;
+      }
+      
       // Redirect based on admin level
       if (admin.adminLevel === 'super_admin') {
         navigate('/admin/manage'); // Super admin goes to management dashboard
@@ -31,18 +37,29 @@ const AdminLogin = () => {
     try {
       const admin = await adminLogin(credentials.login, credentials.password);
       
+      console.log('Admin login successful:', { 
+        adminLevel: admin.adminLevel, 
+        isFirstLogin: admin.isFirstLogin, 
+        firstName: admin.firstName 
+      });
+      
       // Check if this is the first login and password needs to be changed
-      if (admin.isFirstLogin) {
+      if (admin.isFirstLogin === true) {
+        console.log('Redirecting to password change page');
         navigate('/admin/change-password');
+        return;
+      }
+      
+      // Redirect based on admin level
+      if (admin.adminLevel === 'super_admin') {
+        console.log('Redirecting super admin to management dashboard');
+        navigate('/admin/manage'); // Super admin goes to management dashboard
       } else {
-        // Redirect based on admin level
-        if (admin.adminLevel === 'super_admin') {
-          navigate('/admin/manage'); // Super admin goes to management dashboard
-        } else {
-          navigate('/admin/dashboard'); // Regular admins go to complaints dashboard
-        }
+        console.log('Redirecting regular admin to complaints dashboard');
+        navigate('/admin/dashboard'); // Regular admins go to complaints dashboard
       }
     } catch (error) {
+      console.error('Login error:', error);
       setError(error.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);

@@ -40,18 +40,22 @@ const AdminPasswordChange = () => {
 
     try {
       const adminToken = localStorage.getItem('adminToken');
-      await axios.put('/api/admin/change-password',
+      const response = await axios.put('/api/admin/change-password',
         { newPassword: passwords.newPassword },
         { headers: { Authorization: `Bearer ${adminToken}` }}
       );
 
-      // Redirect based on admin level after successful password change
-      if (admin.adminLevel === 'super_admin') {
-        navigate('/admin/manage');
-      } else {
-        navigate('/admin/dashboard');
-      }
+      console.log('Password change successful:', response.data);
+      
+      // Show success message briefly
+      alert('Password changed successfully! You will now be redirected to your dashboard.');
+      
+      // Force a page reload to ensure the admin state is updated
+      // This will trigger the AdminAuthContext to refetch the admin data
+      window.location.href = admin.adminLevel === 'super_admin' ? '/admin/manage' : '/admin/dashboard';
+      
     } catch (error) {
+      console.error('Password change error:', error);
       setError(error.response?.data?.message || 'Failed to change password');
     } finally {
       setLoading(false);
