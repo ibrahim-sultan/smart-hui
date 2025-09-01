@@ -160,6 +160,15 @@ router.post('/create', [
 
     await admin.save();
 
+    // Log the temporary password to server console for super admin to access securely
+    console.log(`\n=== NEW ADMIN CREATED ===`);
+    console.log(`Username: ${admin.username}`);
+    console.log(`Name: ${admin.firstName} ${admin.lastName}`);
+    console.log(`Temporary Password: ${temporaryPassword}`);
+    console.log(`Created by: ${req.admin.firstName} ${req.admin.lastName}`);
+    console.log(`Created at: ${new Date().toISOString()}`);
+    console.log(`========================\n`);
+
     res.status(201).json({
       message: 'Admin created successfully',
       admin: {
@@ -168,8 +177,7 @@ router.post('/create', [
         firstName: admin.firstName,
         lastName: admin.lastName,
         adminLevel: admin.adminLevel,
-        permissions: admin.permissions,
-        temporaryPassword: temporaryPassword
+        permissions: admin.permissions
       }
     });
   } catch (error) {
@@ -280,15 +288,55 @@ router.put('/:id', [
   }
 });
 
+// @route   GET /api/admin/:id/temp-password
+// @desc    Get temporary password for newly created admin (super admin only)
+// @access  Private (super admin)
+router.get('/:id/temp-password', adminAuth, adminAuthorize('super_admin'), async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.params.id);
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    if (!admin.isFirstLogin || !admin.temporaryPassword) {
+      return res.status(400).json({ message: 'No temporary password available for this admin' });
+    }
+
+    res.json({
+      username: admin.username,
+      temporaryPassword: admin.temporaryPassword,
+      firstName: admin.firstName,
+      lastName: admin.lastName
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   DELETE /api/admin/:id
 // @desc    Delete admin (super admin only)
 // @access  Private (super admin)
 router.delete('/:id', adminAuth, adminAuthorize('super_admin'), async (req, res) => {
   try {
-    const admin = await Admin.findByIdAndDelete(req.params.id);
-    if (!admin) {
+    const adminToDelete = await Admin.findById(req.params.id);
+    if (!adminToDelete) {
       return res.status(404).json({ message: 'Admin not found' });
     }
+
+    // Prevent deleting super admin
+    if (adminToDelete.adminLevel === 'super_admin') {
+      return res.status(400).json({ message: 'Cannot delete super admin account' });
+    }
+
+    // Log the deletion for audit purposes
+    console.log(`\n=== ADMIN DELETED ===`);
+    console.log(`Deleted Admin: ${adminToDelete.username} (${adminToDelete.firstName} ${adminToDelete.lastName})`);
+    console.log(`Deleted by: ${req.admin.firstName} ${req.admin.lastName}`);
+    console.log(`Deleted at: ${new Date().toISOString()}`);
+    console.log(`====================\n`);
+
+    await Admin.findByIdAndDelete(req.params.id);
 
     res.json({ message: 'Admin deleted successfully' });
   } catch (error) {

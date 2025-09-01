@@ -8,14 +8,17 @@ import './AdminManagement.css';
 const AdminManagement = () => {
   const [admins, setAdmins] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [newAdmin, setNewAdmin] = useState({
     username: '',
     firstName: '',
     lastName: ''
   });
   const [createdAdmin, setCreatedAdmin] = useState(null);
+  const [adminToDelete, setAdminToDelete] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState('');
   const { isSuperAdmin, admin } = useAdminAuth();
@@ -68,7 +71,7 @@ const AdminManagement = () => {
       setCreatedAdmin(response.data);
       setNewAdmin({ username: '', firstName: '', lastName: '' });
       setShowCreateModal(false);
-      setShowPasswordModal(true);
+      setShowSuccessModal(true);
       fetchAdmins();
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to create admin');
@@ -87,6 +90,24 @@ const AdminManagement = () => {
       fetchAdmins();
     } catch (error) {
       console.error('Error updating admin:', error);
+    }
+  };
+
+  const handleDeleteAdmin = async (adminId) => {
+    setDeleteLoading(true);
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      await axios.delete(`http://localhost:5000/api/admin/${adminId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setShowDeleteModal(false);
+      setAdminToDelete(null);
+      fetchAdmins();
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      setError('Failed to delete admin');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -163,6 +184,18 @@ const AdminManagement = () => {
                   >
                     {admin.isActive ? 'Active' : 'Inactive'}
                   </button>
+                  {admin.adminLevel !== 'super_admin' && (
+                    <button 
+                      className="delete-btn"
+                      onClick={() => {
+                        setAdminToDelete(admin);
+                        setShowDeleteModal(true);
+                      }}
+                      title="Delete admin"
+                    >
+                      🗑️
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -235,13 +268,13 @@ const AdminManagement = () => {
           </motion.div>
         )}
 
-        {showPasswordModal && createdAdmin && (
+        {showSuccessModal && createdAdmin && (
           <motion.div
             className="modal-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setShowPasswordModal(false)}
+            onClick={() => setShowSuccessModal(false)}
           >
             <motion.div
               className="modal-content"
@@ -251,14 +284,73 @@ const AdminManagement = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <h3>Admin Created Successfully</h3>
-              <div className="password-display">
+              <div className="success-message">
+                <div className="success-icon">✅</div>
                 <p><strong>Username:</strong> {createdAdmin.admin.username}</p>
-                <p><strong>Temporary Password:</strong> {createdAdmin.temporaryPassword}</p>
-                <p className="warning">Please share this password securely with the new admin.</p>
+                <p><strong>Name:</strong> {createdAdmin.admin.firstName} {createdAdmin.admin.lastName}</p>
+                <div className="info-message">
+                  <p><strong>Next Steps:</strong></p>
+                  <ul>
+                    <li>A temporary password has been generated for the new admin</li>
+                    <li>Check the server console logs for the temporary password</li>
+                    <li>Provide the credentials to the admin through a secure channel</li>
+                    <li>The admin will be required to change their password on first login</li>
+                  </ul>
+                </div>
+                <div className="security-note">
+                  <p><strong>Security Note:</strong> For security reasons, the temporary password is not displayed here. Check your server console or contact the system administrator.</p>
+                </div>
               </div>
-              <button onClick={() => setShowPasswordModal(false)}>
+              <button onClick={() => setShowSuccessModal(false)}>
                 Close
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showDeleteModal && adminToDelete && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDeleteModal(false)}
+          >
+            <motion.div
+              className="modal-content"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3>Delete Admin</h3>
+              <div className="delete-confirmation">
+                <div className="warning-icon">⚠️</div>
+                <p>Are you sure you want to delete the following admin?</p>
+                <div className="admin-details">
+                  <p><strong>Name:</strong> {adminToDelete.firstName} {adminToDelete.lastName}</p>
+                  <p><strong>Username:</strong> {adminToDelete.username}</p>
+                  <p><strong>Email:</strong> {adminToDelete.email}</p>
+                </div>
+                <p className="warning">This action cannot be undone.</p>
+              </div>
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  className="delete-button"
+                  onClick={() => handleDeleteAdmin(adminToDelete._id)}
+                  disabled={deleteLoading}
+                >
+                  {deleteLoading ? 'Deleting...' : 'Delete Admin'}
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
