@@ -6,10 +6,7 @@
 ✅ **Render Ready**: Configured with `render.yaml` and `build.sh`  
 ✅ **Admin System**: Complete role-based access control implemented  
 
-### 🔐 **Super Admin Credentials** (Post-Deployment)
-- **URL**: `https://your-app-name.onrender.com/admin/login`
-- **Email**: `superadmin@alhikmah.edu.ng`
-- **Password**: `SuperAdmin@123`
+
 
 ### 📋 **Quick Deployment Steps**
 1. Create new Web Service on [Render](https://render.com/dashboard)
