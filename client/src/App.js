@@ -10,10 +10,12 @@ import Register from './components/Register/Register';
 import StudentSection from './components/StudentSection/StudentSection';
 import StaffSection from './components/StaffSection/StaffSection';
 import AdminDashboard from './components/AdminDashboard/AdminDashboard';
+import AdminDashboardContainer from './components/AdminDashboard/AdminDashboardContainer';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute/AdminProtectedRoute';
 import AdminHeader from './components/AdminHeader/AdminHeader';
 import AdminManagement from './components/AdminManagement/AdminManagement';
+import AdminPasswordChange from './components/AdminPasswordChange/AdminPasswordChange';
 import NotificationSystem from './components/NotificationSystem/NotificationSystem';
 import './App.css';
 
@@ -166,25 +168,24 @@ function AppContent() {
           {/* Admin Login Route */}
           <Route path="/admin/login" element={<AdminLogin />} />
           
+          {/* Admin Password Change Route - For first-time logins */}
+          <Route path="/admin/change-password" element={
+            <AdminProtectedRoute allowedRoles={['super_admin', 'admin', 'sub_admin']}>
+              <AdminPasswordChange />
+            </AdminProtectedRoute>
+          } />
+          
           {/* Admin Dashboard Route - For regular admins and sub-admins to view complaints */}
           <Route path="/admin/dashboard" element={
             <AdminProtectedRoute allowedRoles={['admin', 'sub_admin']}>
-              <div>
-                <AdminHeader />
-                <motion.div
-                  initial={{ opacity: 0, x: -100 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 100 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <AdminDashboard 
-                    complaints={complaints}
-                    onUpdatePriority={updateComplaintPriority}
-                    onUpdateStatus={updateComplaintStatus}
-                    onDeleteComplaint={deleteComplaint}
-                  />
-                </motion.div>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 100 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AdminDashboardContainer />
+              </motion.div>
             </AdminProtectedRoute>
           } />
           
