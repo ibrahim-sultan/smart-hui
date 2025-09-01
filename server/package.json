@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "create-super-admin": "node scripts/createSuperAdmin.js"
+    "create-super-admin": "node scripts/createSuperAdmin.js",
+    "check-users": "node scripts/checkUsers.js",
+    "fix-users": "node scripts/fixUsers.js"
   },
   "dependencies": {
     "axios": "^1.11.0",
