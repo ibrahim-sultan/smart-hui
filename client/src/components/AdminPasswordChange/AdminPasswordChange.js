@@ -40,7 +40,7 @@ const AdminPasswordChange = () => {
 
     try {
       const adminToken = localStorage.getItem('adminToken');
-      await axios.put('http://localhost:5000/api/admin/change-password', 
+      await axios.put('/api/admin/change-password',
         { newPassword: passwords.newPassword },
         { headers: { Authorization: `Bearer ${adminToken}` }}
       );

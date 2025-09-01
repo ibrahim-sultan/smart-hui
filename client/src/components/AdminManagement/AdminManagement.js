@@ -42,7 +42,7 @@ const AdminManagement = () => {
         throw new Error('No admin token found');
       }
       
-      const response = await axios.get('http://localhost:5000/api/admin/list', {
+      const response = await axios.get('/api/admin/list', {
         headers: { Authorization: `Bearer ${adminToken}` }
       });
       setAdmins(response.data);
@@ -64,7 +64,7 @@ const AdminManagement = () => {
 
     try {
       const adminToken = localStorage.getItem('adminToken');
-      const response = await axios.post('http://localhost:5000/api/admin/create', newAdmin, {
+      const response = await axios.post('/api/admin/create', newAdmin, {
         headers: { Authorization: `Bearer ${adminToken}` }
       });
 
@@ -83,7 +83,7 @@ const AdminManagement = () => {
   const handleToggleActive = async (adminId, isActive) => {
     try {
       const adminToken = localStorage.getItem('adminToken');
-      await axios.put(`http://localhost:5000/api/admin/${adminId}`, 
+      await axios.put(`/api/admin/${adminId}`,
         { isActive: !isActive },
         { headers: { Authorization: `Bearer ${adminToken}` } }
       );
@@ -97,7 +97,7 @@ const AdminManagement = () => {
     setDeleteLoading(true);
     try {
       const adminToken = localStorage.getItem('adminToken');
-      await axios.delete(`http://localhost:5000/api/admin/${adminId}`, {
+      await axios.delete(`/api/admin/${adminId}`, {
         headers: { Authorization: `Bearer ${adminToken}` }
       });
       setShowDeleteModal(false);

@@ -34,7 +34,7 @@ export const AdminAuthProvider = ({ children }) => {
 
   const fetchAdmin = async () => {
     try {
-      const response = await adminAxios.get('http://localhost:5000/api/admin/me');
+      const response = await adminAxios.get('/api/admin/me');
       setAdmin(response.data);
     } catch (error) {
       console.error('Error fetching admin:', error);
@@ -47,7 +47,7 @@ export const AdminAuthProvider = ({ children }) => {
 
   const adminLogin = async (login, password) => {
     try {
-      const response = await adminAxios.post('http://localhost:5000/api/admin/login', { login, password });
+      const response = await adminAxios.post('/api/admin/login', { login, password });
       const { token, admin } = response.data;
       
       localStorage.setItem('adminToken', token);
