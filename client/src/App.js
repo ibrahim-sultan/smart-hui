@@ -16,6 +16,8 @@ import AdminProtectedRoute from './components/AdminProtectedRoute/AdminProtected
 import AdminHeader from './components/AdminHeader/AdminHeader';
 import AdminManagement from './components/AdminManagement/AdminManagement';
 import AdminPasswordChange from './components/AdminPasswordChange/AdminPasswordChange';
+import AdminForgotPassword from './components/AdminForgotPassword/AdminForgotPassword';
+import AdminResetPassword from './components/AdminResetPassword/AdminResetPassword';
 import NotificationSystem from './components/NotificationSystem/NotificationSystem';
 import './App.css';
 
@@ -167,6 +169,12 @@ function AppContent() {
           
           {/* Admin Login Route */}
           <Route path="/admin/login" element={<AdminLogin />} />
+          
+          {/* Admin Forgot Password Route - Public */}
+          <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
+          
+          {/* Admin Reset Password Route - Public */}
+          <Route path="/admin/reset-password" element={<AdminResetPassword />} />
           
           {/* Admin Password Change Route - For first-time logins */}
           <Route path="/admin/change-password" element={

@@ -228,6 +228,116 @@ router.put('/change-password', [
   }
 });
 
+// @route   POST /api/admin/forgot-password
+// @desc    Request password reset token
+// @access  Public
+router.post('/forgot-password', [
+  body('login').notEmpty().withMessage('Username or email is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { login } = req.body;
+
+    let admin;
+    // Check if login is email (super admin) or username (regular admin)
+    if (login.includes('@')) {
+      // Email login - check for super admin
+      admin = await Admin.findOne({ email: login, adminLevel: 'super_admin' }).select('+resetPasswordToken +resetPasswordExpiry');
+    } else {
+      // Username login - check for any admin
+      admin = await Admin.findOne({ username: login }).select('+resetPasswordToken +resetPasswordExpiry');
+    }
+    
+    if (!admin) {
+      // Don't reveal if account exists or not for security
+      return res.json({ message: 'If an account with that username/email exists, a password reset token has been generated. Please contact the super admin for the reset token.' });
+    }
+
+    if (!admin.isActive) {
+      return res.status(400).json({ message: 'Admin account is deactivated. Contact super admin for assistance.' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    admin.resetPasswordToken = resetToken;
+    admin.resetPasswordExpiry = resetTokenExpiry;
+    await admin.save();
+
+    // Log reset token for super admin to access (since we don't have email service)
+    console.log(`\n=== PASSWORD RESET REQUESTED ===`);
+    console.log(`Admin: ${admin.username || admin.email} (${admin.firstName} ${admin.lastName})`);
+    console.log(`Reset Token: ${resetToken}`);
+    console.log(`Token Expires: ${resetTokenExpiry.toISOString()}`);
+    console.log(`Reset URL: /admin/reset-password?token=${resetToken}`);
+    console.log(`Requested at: ${new Date().toISOString()}`);
+    console.log(`==============================\n`);
+
+    res.json({
+      message: 'Password reset token has been generated. Please contact the super admin for the reset token.',
+      instructions: 'The super admin can provide you with the reset token from the server logs.'
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/reset-password
+// @desc    Reset password using token
+// @access  Public
+router.post('/reset-password', [
+  body('token').notEmpty().withMessage('Reset token is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { token, newPassword } = req.body;
+
+    // Find admin with valid reset token
+    const admin = await Admin.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpiry: { $gt: Date.now() }
+    }).select('+resetPasswordToken +resetPasswordExpiry');
+
+    if (!admin) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    if (!admin.isActive) {
+      return res.status(400).json({ message: 'Admin account is deactivated' });
+    }
+
+    // Update password and clear reset token
+    admin.password = newPassword;
+    admin.resetPasswordToken = undefined;
+    admin.resetPasswordExpiry = undefined;
+    admin.isFirstLogin = false; // Clear first login flag if it was set
+    admin.temporaryPassword = undefined; // Clear temporary password if it exists
+    await admin.save();
+
+    // Log successful password reset
+    console.log(`\n=== PASSWORD RESET SUCCESSFUL ===`);
+    console.log(`Admin: ${admin.username || admin.email} (${admin.firstName} ${admin.lastName})`);
+    console.log(`Reset completed at: ${new Date().toISOString()}`);
+    console.log(`==============================\n`);
+
+    res.json({ message: 'Password reset successful. You can now log in with your new password.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/list
 // @desc    Get all admins (super admin only)
 // @access  Private (super admin)
