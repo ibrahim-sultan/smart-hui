@@ -30,7 +30,7 @@ console.log('Environment validation completed');
 console.log('Loading route modules...');
 
 // Import routes with error handling
-let authRoutes, userRoutes, complaintRoutes, notificationRoutes, passwordResetRoutes, adminRoutes;
+let authRoutes, userRoutes, complaintRoutes, notificationRoutes, passwordResetRoutes, adminRoutes, debugRoutes;
 
 try {
   authRoutes = require('./routes/auth');
@@ -80,6 +80,14 @@ try {
   throw err;
 }
 
+try {
+  debugRoutes = require('./routes/debug');
+  console.log('✓ Debug routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load debug routes:', err.message);
+  debugRoutes = null;
+}
+
 console.log('All route modules loaded successfully');
 
 const app = express();
@@ -114,6 +122,12 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Debug routes (only in development/production for troubleshooting)
+if (debugRoutes) {
+  app.use('/api/debug', debugRoutes);
+  console.log('✓ Debug routes enabled at /api/debug');
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
