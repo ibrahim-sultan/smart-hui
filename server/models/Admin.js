@@ -80,7 +80,8 @@ const adminSchema = new mongoose.Schema({
   },
   temporaryPassword: {
     type: String,
-    default: null
+    default: null,
+    select: false // Don't include in queries by default for security
   },
   lastLogin: {
     type: Date,

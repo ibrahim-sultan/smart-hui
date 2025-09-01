@@ -178,6 +178,13 @@ router.post('/create', [
         lastName: admin.lastName,
         adminLevel: admin.adminLevel,
         permissions: admin.permissions
+      },
+      temporaryPassword: temporaryPassword,
+      loginInstructions: {
+        username: admin.username,
+        temporaryPassword: temporaryPassword,
+        loginUrl: '/admin/login',
+        note: 'Admin must change password on first login'
       }
     });
   } catch (error) {
@@ -211,6 +218,7 @@ router.put('/change-password', [
 
     admin.password = newPassword;
     admin.isFirstLogin = false;
+    admin.temporaryPassword = undefined; // Clear the temporary password for security
     await admin.save();
 
     res.json({ message: 'Password changed successfully' });
@@ -293,7 +301,7 @@ router.put('/:id', [
 // @access  Private (super admin)
 router.get('/:id/temp-password', adminAuth, adminAuthorize('super_admin'), async (req, res) => {
   try {
-    const admin = await Admin.findById(req.params.id);
+    const admin = await Admin.findById(req.params.id).select('+temporaryPassword');
     if (!admin) {
       return res.status(404).json({ message: 'Admin not found' });
     }

@@ -288,17 +288,47 @@ const AdminManagement = () => {
                 <div className="success-icon">✅</div>
                 <p><strong>Username:</strong> {createdAdmin.admin.username}</p>
                 <p><strong>Name:</strong> {createdAdmin.admin.firstName} {createdAdmin.admin.lastName}</p>
-                <div className="info-message">
-                  <p><strong>Next Steps:</strong></p>
-                  <ul>
-                    <li>A temporary password has been generated for the new admin</li>
-                    <li>Check the server console logs for the temporary password</li>
-                    <li>Provide the credentials to the admin through a secure channel</li>
-                    <li>The admin will be required to change their password on first login</li>
-                  </ul>
+                
+                <div className="credentials-box">
+                  <h4>🔑 Login Credentials</h4>
+                  <div className="credential-row">
+                    <strong>Username:</strong> 
+                    <code className="credential-value">{createdAdmin.admin.username}</code>
+                    <button 
+                      className="copy-btn" 
+                      onClick={() => navigator.clipboard.writeText(createdAdmin.admin.username)}
+                      title="Copy username"
+                    >
+                      📋
+                    </button>
+                  </div>
+                  <div className="credential-row">
+                    <strong>Temporary Password:</strong> 
+                    <code className="credential-value">{createdAdmin.temporaryPassword}</code>
+                    <button 
+                      className="copy-btn" 
+                      onClick={() => navigator.clipboard.writeText(createdAdmin.temporaryPassword)}
+                      title="Copy password"
+                    >
+                      📋
+                    </button>
+                  </div>
+                  <div className="login-url">
+                    <strong>Login URL:</strong> 
+                    <a href="/admin/login" target="_blank" rel="noopener noreferrer">
+                      /admin/login
+                    </a>
+                  </div>
                 </div>
-                <div className="security-note">
-                  <p><strong>Security Note:</strong> For security reasons, the temporary password is not displayed here. Check your server console or contact the system administrator.</p>
+                
+                <div className="info-message">
+                  <p><strong>Important Instructions:</strong></p>
+                  <ul>
+                    <li>✅ Share these credentials securely with the new admin</li>
+                    <li>⚠️ The admin MUST change their password on first login</li>
+                    <li>🔒 The temporary password will be invalid after first use</li>
+                    <li>📝 Save these credentials before closing this dialog</li>
+                  </ul>
                 </div>
               </div>
               <button onClick={() => setShowSuccessModal(false)}>
