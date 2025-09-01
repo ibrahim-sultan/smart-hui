@@ -66,3 +66,13 @@ fi
 echo "🎉 Build process completed successfully!"
 echo "Final build structure:"
 find build -type f | head -10
+
+# Setup Super Admin for production (only if MONGODB_URI is available)
+echo "🔐 Setting up Super Admin for production..."
+if [ -n "$MONGODB_URI" ]; then
+    echo "MongoDB URI found, setting up super admin..."
+    cd ../server
+    node scripts/resetSuperAdmin.js || echo "⚠️  Super admin setup will be done manually"
+else
+    echo "⚠️  No MONGODB_URI found, super admin setup will be done manually after deployment"
+fi
