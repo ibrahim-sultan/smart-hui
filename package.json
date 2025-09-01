@@ -27,6 +27,10 @@
   ],
   "author": "Smart HUI Team",
   "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },

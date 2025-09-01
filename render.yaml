@@ -2,6 +2,7 @@ services:
   - type: web
     name: smart-hui
     env: node
+    runtime: node
     buildCommand: chmod +x build.sh && ./build.sh
     startCommand: cd server && npm start
     plan: free
