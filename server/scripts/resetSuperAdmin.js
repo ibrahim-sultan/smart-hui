@@ -1,14 +1,15 @@
 const mongoose = require('mongoose');
 const Admin = require('../models/Admin');
 const dotenv = require('dotenv');
+const path = require('path');
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const resetSuperAdmin = async () => {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/smart-hikmah', {
+    await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
