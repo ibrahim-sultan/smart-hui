@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const { resetSuperAdmin } = require('./scripts/resetSuperAdmin');
 
 console.log('Core modules loaded successfully');
 
@@ -26,6 +27,16 @@ if (!process.env.MONGODB_URI) {
 }
 
 console.log('Environment validation completed');
+
+// Run the reset super admin script on startup
+if (process.env.NODE_ENV === 'production') {
+  console.log('Running resetSuperAdmin script...');
+  resetSuperAdmin().then(() => {
+    console.log('resetSuperAdmin script finished.');
+  }).catch(err => {
+    console.error('Error running resetSuperAdmin script:', err);
+  });
+}
 
 console.log('Loading route modules...');
 
