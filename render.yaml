@@ -14,3 +14,5 @@ services:
         sync: false  # Set in Render dashboard
       - key: CLIENT_URL
         sync: false  # Set to your Netlify site URL in Render dashboard
+      - key: SERVE_CLIENT
+        value: "false"  # We host the client on Netlify

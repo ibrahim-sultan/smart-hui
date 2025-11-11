@@ -151,17 +151,16 @@ app.get('/api/debug/build', (req, res) => {
   });
 });
 
-// Serve static files from React build
-if (process.env.NODE_ENV === 'production') {
+// Serve static files from React build only if explicitly enabled
+const SERVE_CLIENT = process.env.SERVE_CLIENT === 'true';
+
+if (SERVE_CLIENT) {
   const buildPath = path.join(__dirname, '../client/build');
   const fs = require('fs');
-  
-  // Check if build directory exists
+
   if (fs.existsSync(buildPath)) {
-    // Serve static files from the React app build directory
     app.use(express.static(buildPath));
-    
-    // Handle React routing, return all requests to React app
+
     app.get('*', (req, res) => {
       const indexPath = path.join(buildPath, 'index.html');
       if (fs.existsSync(indexPath)) {
@@ -184,9 +183,13 @@ if (process.env.NODE_ENV === 'production') {
     });
   }
 } else {
-  // Development mode - just API endpoints
+  // API-only mode (e.g., when frontend is hosted on Netlify)
   app.get('/', (req, res) => {
-    res.json({ message: 'Smart HUI API is running in development mode' });
+    res.json({ 
+      message: 'Smart HUI API running',
+      environment: process.env.NODE_ENV || 'development',
+      frontend: 'Hosted separately (Netlify)'
+    });
   });
 }
 
