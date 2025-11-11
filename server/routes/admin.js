@@ -13,7 +13,7 @@ const generateTemporaryPassword = () => {
   return crypto.randomBytes(6).toString('hex');
 };
 
-// Admin permission configurations
+// Admin permission configurations (legacy mappings kept for backward compatibility)
 const ADMIN_PERMISSIONS = {
   // Admins who can see ALL complaints from staff and students
   full_access: [
@@ -38,6 +38,11 @@ const ADMIN_PERMISSIONS = {
     'hui/sse/pf/943'
   ]
 };
+
+const ALL_CATEGORIES = [
+  'academic', 'administrative', 'infrastructure', 'financial',
+  'network', 'password', 'additional_credit', 'other'
+];
 
 // @route   POST /api/admin/login
 // @desc    Admin login with username/email
@@ -111,7 +116,10 @@ router.post('/create', [
   body('username').notEmpty().withMessage('Username is required')
     .matches(/^hui\/sse\/pf\/\d{3}$/).withMessage('Username must be in format: hui/sse/pf/XXX (where XXX is a 3-digit number)'),
   body('firstName').notEmpty().withMessage('First name is required'),
-  body('lastName').notEmpty().withMessage('Last name is required')
+  body('lastName').notEmpty().withMessage('Last name is required'),
+  body('canSeeAllComplaints').optional().isBoolean().withMessage('canSeeAllComplaints must be boolean'),
+  body('visibleCategories').optional().isArray().withMessage('visibleCategories must be an array'),
+  body('visibleCategories.*').optional().isString().custom(v => ALL_CATEGORIES.includes(v)).withMessage('Invalid category provided')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -119,7 +127,7 @@ router.post('/create', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { username, firstName, lastName } = req.body;
+    const { username, firstName, lastName, canSeeAllComplaints, visibleCategories } = req.body;
 
     // Check if username already exists
     const existingUsername = await Admin.findOne({ username });
@@ -130,20 +138,32 @@ router.post('/create', [
     // Generate temporary password
     const temporaryPassword = generateTemporaryPassword();
 
-    // Set permissions based on username
+    // Determine permissions: prefer explicit input; fall back to legacy username mappings
     let permissions = {
       canSeeAllComplaints: false,
       visibleCategories: [],
       canManageAdmins: false
     };
 
-    if (ADMIN_PERMISSIONS.full_access.includes(username)) {
-      permissions.canSeeAllComplaints = true;
-      permissions.visibleCategories = ['academic', 'administrative', 'infrastructure', 'financial', 'network', 'password', 'additional_credit', 'other'];
-    } else if (ADMIN_PERMISSIONS.network_password_credit.includes(username)) {
-      permissions.visibleCategories = ['network', 'password', 'additional_credit'];
-    } else if (ADMIN_PERMISSIONS.password_credit_only.includes(username)) {
-      permissions.visibleCategories = ['password', 'additional_credit'];
+    if (typeof canSeeAllComplaints === 'boolean' || Array.isArray(visibleCategories)) {
+      // Use provided values
+      permissions.canSeeAllComplaints = Boolean(canSeeAllComplaints);
+      if (permissions.canSeeAllComplaints) {
+        permissions.visibleCategories = ALL_CATEGORIES;
+      } else if (Array.isArray(visibleCategories)) {
+        // Filter to allowed categories to be safe
+        permissions.visibleCategories = visibleCategories.filter(c => ALL_CATEGORIES.includes(c));
+      }
+    } else {
+      // Legacy fallback based on username
+      if (ADMIN_PERMISSIONS.full_access.includes(username)) {
+        permissions.canSeeAllComplaints = true;
+        permissions.visibleCategories = ALL_CATEGORIES;
+      } else if (ADMIN_PERMISSIONS.network_password_credit.includes(username)) {
+        permissions.visibleCategories = ['network', 'password', 'additional_credit'];
+      } else if (ADMIN_PERMISSIONS.password_credit_only.includes(username)) {
+        permissions.visibleCategories = ['password', 'additional_credit'];
+      }
     }
 
     const admin = new Admin({

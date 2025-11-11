@@ -13,8 +13,15 @@ const AdminManagement = () => {
   const [newAdmin, setNewAdmin] = useState({
     username: '',
     firstName: '',
-    lastName: ''
+    lastName: '',
+    canSeeAllComplaints: false,
+    visibleCategories: []
   });
+  
+  const ALL_CATEGORIES = [
+    'academic', 'administrative', 'infrastructure', 'financial',
+    'network', 'password', 'additional_credit', 'other'
+  ];
   const [createdAdmin, setCreatedAdmin] = useState(null);
   const [adminToDelete, setAdminToDelete] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -64,12 +71,20 @@ const AdminManagement = () => {
 
     try {
       const adminToken = localStorage.getItem('adminToken');
-      const response = await axios.post('/api/admin/create', newAdmin, {
+      const payload = {
+        username: newAdmin.username,
+        firstName: newAdmin.firstName,
+        lastName: newAdmin.lastName,
+        canSeeAllComplaints: newAdmin.canSeeAllComplaints,
+        visibleCategories: newAdmin.canSeeAllComplaints ? ALL_CATEGORIES : newAdmin.visibleCategories
+      };
+
+      const response = await axios.post('/api/admin/create', payload, {
         headers: { Authorization: `Bearer ${adminToken}` }
       });
 
       setCreatedAdmin(response.data);
-      setNewAdmin({ username: '', firstName: '', lastName: '' });
+      setNewAdmin({ username: '', firstName: '', lastName: '', canSeeAllComplaints: false, visibleCategories: [] });
       setShowCreateModal(false);
       setShowSuccessModal(true);
       fetchAdmins();
@@ -254,6 +269,48 @@ const AdminManagement = () => {
                 </div>
                 
                 <small className="form-note">Username format: hui/sse/pf/XXX (where XXX is a 3-digit number)</small>
+
+                <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={newAdmin.canSeeAllComplaints}
+                      onChange={(e) => setNewAdmin({
+                        ...newAdmin,
+                        canSeeAllComplaints: e.target.checked,
+                        visibleCategories: e.target.checked ? ALL_CATEGORIES : newAdmin.visibleCategories
+                      })}
+                    />
+                    {' '}Grant access to ALL categories
+                  </label>
+                </div>
+
+                {!newAdmin.canSeeAllComplaints && (
+                  <div className="form-group">
+                    <label>Visible Categories</label>
+                    <div className="categories-checklist">
+                      {ALL_CATEGORIES.map(cat => (
+                        <label key={cat} className="checkbox-item">
+                          <input
+                            type="checkbox"
+                            checked={newAdmin.visibleCategories.includes(cat)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setNewAdmin(prev => ({
+                                ...prev,
+                                visibleCategories: checked
+                                  ? [...prev.visibleCategories, cat]
+                                  : prev.visibleCategories.filter(c => c !== cat)
+                              }));
+                            }}
+                          />
+                          <span>{cat}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <small className="form-note">Select one or more categories for this admin.</small>
+                  </div>
+                )}
 
                 <div className="modal-actions">
                   <button type="button" onClick={() => setShowCreateModal(false)}>
