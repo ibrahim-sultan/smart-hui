@@ -2,7 +2,7 @@ services:
   - type: web
     name: smart-hui-server
     env: node
-    buildCommand: cd server && npm install
+    buildCommand: bash -lc 'cd server && npm ci && cd ../client && npm ci && npm run build'
     startCommand: cd server && npm start
     plan: free
     envVars:
@@ -13,6 +13,6 @@ services:
       - key: JWT_SECRET
         sync: false  # Set in Render dashboard
       - key: CLIENT_URL
-        sync: false  # Set to your Netlify site URL in Render dashboard
+        sync: false  # Used in emails (password reset links)
       - key: SERVE_CLIENT
-        value: "false"  # We host the client on Netlify
+        value: "true"  # Serve client/build from Express on the same service
