@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { FaTachometerAlt, FaFilter, FaList, FaExclamationCircle, FaCheckCircle, FaSpinner, FaSync, FaUserShield, FaUniversity, FaNetworkWired, FaMoneyBillWave, FaLock, FaPlusCircle, FaQuestionCircle, FaTools } from 'react-icons/fa';
+import { FaTachometerAlt, FaFilter, FaList, FaExclamationCircle, FaCheckCircle, FaSpinner, FaSync, FaUserShield, FaUniversity, FaNetworkWired, FaMoneyBillWave, FaLock, FaPlusCircle, FaQuestionCircle, FaTools, FaBook, FaBuilding, FaHome, FaCog, FaShieldAlt, FaHeartbeat, FaBus, FaUtensils } from 'react-icons/fa';
 import ComplaintModal from './ComplaintModal'; 
 import DebugTools from './DebugTools';
 import './AdminDashboard.css';

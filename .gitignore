@@ -56,3 +56,6 @@ Thumbs.db
 .env
 .env.test
 .env.production
+
+# Local test payloads or secrets
+login_body.json

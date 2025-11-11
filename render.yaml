@@ -1,17 +1,16 @@
 services:
   - type: web
-    name: smart-hui
+    name: smart-hui-server
     env: node
-    runtime: node
-    buildCommand: chmod +x build.sh && ./build.sh
+    buildCommand: cd server && npm install
     startCommand: cd server && npm start
     plan: free
     envVars:
       - key: NODE_ENV
         value: production
       - key: MONGODB_URI
-        sync: false  # This should be set in Render dashboard
+        sync: false  # Set in Render dashboard
       - key: JWT_SECRET
-        sync: false  # This should be set in Render dashboard
+        sync: false  # Set in Render dashboard
       - key: CLIENT_URL
-        sync: false  # This should be set in Render dashboard
+        sync: false  # Set to your Netlify site URL in Render dashboard
