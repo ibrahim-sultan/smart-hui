@@ -2,12 +2,14 @@ services:
   - type: web
     name: smart-hui-server
     env: node
-buildCommand: bash scripts/render-build.sh
+    buildCommand: bash ./scripts/render-build.sh
     startCommand: cd server && npm start
     plan: free
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 20
       - key: MONGODB_URI
         sync: false  # Set in Render dashboard
       - key: JWT_SECRET
