@@ -1,0 +1,138 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #157646;
+  padding: 20px;
+}
+
+.login-form {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-logo {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 15px;
+  object-fit: contain;
+}
+
+.login-header h2 {
+  color: #333;
+  margin-bottom: 5px;
+  font-size: 24px;
+}
+
+.login-header p {
+  color: #666;
+  font-size: 16px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: 600;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #157646;
+}
+
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background: #157646;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.login-button:hover:not(:disabled) {
+  background: #0f5a35;
+}
+
+.login-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.login-footer {
+  margin-top: 30px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.credentials-info {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #157646;
+}
+
+.credentials-info h3 {
+  color: #157646;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+.credentials-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.credentials-info li {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #333;
+}
+
+.credentials-info strong {
+  color: #157646;
+}
+
+@media (max-width: 480px) {
+  .login-form {
+    padding: 30px 20px;
+  }
+}

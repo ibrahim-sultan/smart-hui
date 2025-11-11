@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Login Tester</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Super Admin Login Debugger</h1>
+        <p>This tool will help debug the super admin login issue on your Smart HUI application.</p>
+
+        <div class="test-section">
+            <h3>1. Check Current Admins</h3>
+            <button onclick="listAdmins()">List All Admins</button>
+            <div id="listResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Login Credentials</h3>
+            <input type="email" id="testEmail" value="superadmin@alhikmah.edu.ng" placeholder="Email">
+            <input type="password" id="testPassword" value="SuperAdmin@123" placeholder="Password">
+            <button onclick="testLogin()">Test Login</button>
+            <div id="testResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Reset Super Admin</h3>
+            <button onclick="resetSuperAdmin()">Reset Super Admin</button>
+            <div id="resetResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Try Actual Admin Login</h3>
+            <input type="email" id="loginEmail" value="superadmin@alhikmah.edu.ng" placeholder="Email">
+            <input type="password" id="loginPassword" value="SuperAdmin@123" placeholder="Password">
+            <button onclick="tryAdminLogin()">Try Admin Login</button>
+            <div id="loginResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Instructions</h3>
+            <p><strong>After running tests:</strong></p>
+            <ol>
+                <li>Run test #1 to see what admins exist</li>
+                <li>Run test #2 to verify login credentials work</li>
+                <li>If issues found, run test #3 to reset super admin</li>
+                <li>Run test #4 to try the actual admin login API</li>
+                <li>Then try logging in at: <a href="https://smart-hui-1.onrender.com/admin/login" target="_blank">Admin Login</a></li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://smart-hui-1.onrender.com/api';
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(content, null, 2);
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        async function listAdmins() {
+            try {
+                const response = await fetch(`${API_BASE}/debug/list-admins`);
+                const data = await response.json();
+                showResult('listResult', data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResult('listResult', { error: error.message }, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/debug/test-login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                showResult('testResult', data, data.success ? 'success' : 'error');
+            } catch (error) {
+                showResult('testResult', { error: error.message }, 'error');
+            }
+        }
+
+        async function resetSuperAdmin() {
+            showResult('resetResult', { message: 'Attempting to reset super admin...' }, 'info');
+            try {
+                const response = await fetch(`${API_BASE}/debug/reset-super-admin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                const data = await response.json();
+                showResult('resetResult', data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResult('resetResult', { error: error.message }, 'error');
+            }
+        }
+
+        async function tryAdminLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/admins/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                showResult('loginResult', data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResult('loginResult', { error: error.message }, 'error');
+            }
+        }
+
+        // Auto-run the first test when page loads
+        window.onload = function() {
+            listAdmins();
+        };
+    </script>
+</body>
+</html>

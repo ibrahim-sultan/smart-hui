@@ -1,0 +1,150 @@
+.user-complaints {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.complaints-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.complaints-header h3 {
+  color: #157646;
+  margin-bottom: 0.5rem;
+}
+
+.complaints-header p {
+  color: #666;
+}
+
+.no-complaints {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.no-complaints-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.complaints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.complaint-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.complaint-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.complaint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.complaint-category {
+  font-weight: bold;
+  color: #157646;
+}
+
+.complaint-date {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.complaint-content {
+  margin-bottom: 1rem;
+}
+
+.complaint-description {
+  color: #333;
+  line-height: 1.5;
+}
+
+.complaint-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.complaint-badges {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.priority-badge,
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: white;
+}
+
+.complaint-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.progress-indicator,
+.resolved-indicator {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.progress-indicator {
+  background: #e8f4fd;
+  color: #3b82f6;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  margin: 0.5rem 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.resolved-indicator {
+  background: #e8f5e8;
+  color: #10b981;
+}
+
+@media (max-width: 768px) {
+  .user-complaints {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .complaint-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
