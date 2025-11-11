@@ -3,6 +3,11 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import axios from 'axios';
+
+// Configure Axios base URL for API calls in production
+// Set REACT_APP_API_URL in the frontend environment (e.g., https://smart-hui.onrender.com)
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || '';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 // Create a separate axios instance for admin requests to avoid conflicts
-const adminAxios = axios.create();
+const adminAxios = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || ''
+});
 
 // Clear any existing auth headers on the admin axios instance
 delete adminAxios.defaults.headers.common['Authorization'];

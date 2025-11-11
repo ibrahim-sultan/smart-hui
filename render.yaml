@@ -18,3 +18,5 @@ services:
         sync: false  # Used in emails (password reset links)
       - key: SERVE_CLIENT
         value: "true"  # Serve client/build from Express on the same service
+      - key: DEBUG_RESET_TOKEN
+        sync: false  # One-time token to authorize /api/debug/reset-super-admin-custom
