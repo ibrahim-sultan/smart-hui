@@ -1,0 +1,43 @@
+{
+  "name": "smart-hui",
+  "version": "1.0.0",
+  "description": "Smart HUI - University Complaint Management System",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "start": "npm run server:start",
+    "build": "cd client && npm run build",
+    "server:dev": "cd server && npm run dev",
+    "server:start": "cd server && npm start",
+    "client:dev": "cd client && npm start",
+    "client:build": "cd client && npm run build",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "test": "cd client && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/smart-hui.git"
+  },
+  "keywords": [
+    "complaint-management",
+    "university",
+    "mern",
+    "react",
+    "nodejs",
+    "mongodb"
+  ],
+  "author": "Smart HUI Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.3",
+    "mongoose": "^8.19.2",
+    "nodemailer": "^7.0.5"
+  }
+}

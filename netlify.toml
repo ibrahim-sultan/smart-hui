@@ -1,0 +1,17 @@
+[build]
+  base = "client"
+  publish = "build"
+  command = "npm ci && npm run build"
+
+# Proxy API calls to your Render backend (update the URL after your first deploy)
+[[redirects]]
+  from = "/api/*"
+  to = "https://YOUR-RENDER-BACKEND.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback so client-side routes work
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

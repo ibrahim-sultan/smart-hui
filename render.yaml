@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: smart-hui-server
+    env: node
+    buildCommand: bash ./scripts/render-build.sh
+    startCommand: cd server && npm start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGODB_URI
+        sync: false  # Set in Render dashboard
+      - key: JWT_SECRET
+        sync: false  # Set in Render dashboard
+      - key: CLIENT_URL
+        sync: false  # Used in emails (password reset links)
+      - key: SERVE_CLIENT
+        value: "true"  # Serve client/build from Express on the same service
+      - key: DEBUG_RESET_TOKEN
+        sync: false  # One-time token to authorize /api/debug/reset-super-admin-custom
