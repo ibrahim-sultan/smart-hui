@@ -69,7 +69,7 @@ const AdminDashboardContainer = () => {
   const handleStatusChange = async (complaintId, newStatus) => {
     try {
       const adminToken = localStorage.getItem('adminToken');
-      await axios.put(`/api/admin/complaints/${complaintId}/status`,
+      await axios.put(`/api/complaints/${complaintId}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${adminToken}` }}
       );
@@ -84,7 +84,7 @@ const AdminDashboardContainer = () => {
   const handlePriorityChange = async (complaintId, newPriority) => {
     try {
       const adminToken = localStorage.getItem('adminToken');
-      await axios.put(`/api/admin/complaints/${complaintId}/priority`,
+      await axios.put(`/api/complaints/${complaintId}`,
         { priority: newPriority },
         { headers: { Authorization: `Bearer ${adminToken}` }}
       );
