@@ -146,6 +146,13 @@ const AdminDashboardContainer = () => {
     );
   }
 
+  const EmptyState = () => (
+    <div className="empty-state">
+      <p>No complaints to display yet.</p>
+      <p>If you just created an admin, ensure categories are assigned or try submitting a new complaint.</p>
+    </div>
+  );
+
   return (
     <div className="admin-dashboard">
       <AdminHeader />
@@ -264,8 +271,11 @@ const AdminDashboardContainer = () => {
           </div>
         </div>
 
-        {/* Complaints List */}
+        {/* Complaints Section */}
         <div className="complaints-section">
+          {complaints.length === 0 ? (
+            <EmptyState />
+          ) : null}
           <h3>Complaints ({complaints.length})</h3>
           {complaints.length === 0 ? (
             <div className="no-complaints">

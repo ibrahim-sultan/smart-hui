@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Admin = require('../models/Admin');
+const User = require('../models/User');
+const Complaint = require('../models/Complaint');
 const { resetSuperAdmin } = require('../scripts/resetSuperAdmin'); // Import the function
 
 // Debug endpoint to check admin login
@@ -167,6 +169,56 @@ router.get('/list-admins', async (req, res) => {
       message: 'Server error',
       error: error.message
     });
+  }
+});
+
+// Seed sample complaints for testing (protected by DEBUG_RESET_TOKEN)
+router.post('/seed-complaints', async (req, res) => {
+  try {
+    const secret = process.env.DEBUG_RESET_TOKEN;
+    if (!secret) return res.status(404).json({ success: false, message: 'Endpoint disabled' });
+    const token = req.get('x-reset-token');
+    if (!token || token !== secret) return res.status(403).json({ success: false, message: 'Forbidden' });
+
+    // Ensure at least one student and one staff user exist
+    let student = await User.findOne({ email: 'seed.student@example.com' });
+    if (!student) {
+      student = new User({
+        firstName: 'Seed', lastName: 'Student', email: 'seed.student@example.com', password: 'Password123!', role: 'student'
+      });
+      await student.save();
+    }
+
+    let staff = await User.findOne({ email: 'seed.staff@example.com' });
+    if (!staff) {
+      staff = new User({
+        firstName: 'Seed', lastName: 'Staff', email: 'seed.staff@example.com', password: 'Password123!', role: 'staff'
+      });
+      await staff.save();
+    }
+
+    const categories = ['academic','administrative','infrastructure','financial','network','password','additional_credit','other'];
+
+    const toCreate = [
+      { title: 'Network outage in hostel', description: 'Intermittent network connectivity.', category: 'network', priority: 'high', submittedBy: student._id },
+      { title: 'Password reset request', description: 'I forgot my portal password.', category: 'password', priority: 'medium', submittedBy: student._id },
+      { title: 'Additional credit needed', description: 'Need more credit units.', category: 'additional_credit', priority: 'low', submittedBy: student._id },
+      { title: 'Projector not working', description: 'Lecture hall projector is faulty.', category: 'infrastructure', priority: 'high', submittedBy: staff._id },
+      { title: 'Payment reversal', description: 'Wrong transaction recorded.', category: 'financial', priority: 'urgent', submittedBy: staff._id },
+      { title: 'Course registration issue', description: 'Cannot register elective course.', category: 'academic', priority: 'medium', submittedBy: student._id }
+    ];
+
+    const created = await Complaint.insertMany(toCreate.map(c => ({
+      ...c,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    })));
+
+    res.json({ success: true, created: created.length, ids: created.map(c => c._id) });
+  } catch (error) {
+    console.error('Seed complaints error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
