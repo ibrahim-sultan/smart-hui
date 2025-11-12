@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,6 +8,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -61,7 +62,13 @@ const Header = () => {
           </div>
         </motion.div>
 
-        <nav className="navigation">
+        <button className="hamburger" onClick={() => setMenuOpen(v => !v)} aria-label="Toggle navigation">
+          <span className={`bar ${menuOpen ? 'open' : ''}`}></span>
+          <span className={`bar ${menuOpen ? 'open' : ''}`}></span>
+          <span className={`bar ${menuOpen ? 'open' : ''}`}></span>
+        </button>
+
+        <nav className={`navigation ${menuOpen ? 'open' : ''}`}>
           <ul className="nav-list">
             {navItems.map((item, index) => (
               <motion.li 

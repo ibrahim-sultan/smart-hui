@@ -66,6 +66,23 @@
   margin-left: 2rem;
 }
 
+.hamburger {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.hamburger .bar {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #fff;
+  margin: 5px 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
 .nav-list {
   display: flex;
   list-style: none;
@@ -148,13 +165,27 @@
     gap: 1rem;
   }
 
+  .hamburger {
+    display: block;
+    position: absolute;
+    right: 16px;
+    top: 16px;
+  }
+
   .navigation {
+    width: 100%;
     margin-left: 0;
+    display: none;
+  }
+
+  .navigation.open {
+    display: block;
   }
 
   .nav-list {
     justify-content: center;
     flex-wrap: wrap;
+    gap: 1rem;
   }
 
   .user-section {

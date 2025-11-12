@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import './AdminHeader.css';
@@ -6,6 +6,7 @@ import './AdminHeader.css';
 const AdminHeader = () => {
   const { admin, adminLogout, isSuperAdmin } = useAdminAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     adminLogout();
@@ -20,7 +21,13 @@ const AdminHeader = () => {
           <span className="admin-level-badge">{admin?.adminLevel === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
         </div>
         
-        <nav className="admin-nav">
+        <button className="admin-hamburger" onClick={() => setMenuOpen(v => !v)} aria-label="Toggle navigation">
+          <span className={`bar ${menuOpen ? 'open' : ''}`}></span>
+          <span className={`bar ${menuOpen ? 'open' : ''}`}></span>
+          <span className={`bar ${menuOpen ? 'open' : ''}`}></span>
+        </button>
+
+        <nav className={`admin-nav ${menuOpen ? 'open' : ''}`}>
           {isSuperAdmin() ? (
             <>
               <button 
