@@ -94,7 +94,7 @@ router.get('/:id', auth, async (req, res) => {
 router.post('/', auth, [
   body('title').notEmpty().withMessage('Title is required'),
   body('description').notEmpty().withMessage('Description is required'),
-  body('category').isIn(['academic', 'administrative', 'infrastructure', 'financial', 'other']).withMessage('Invalid category'),
+  body('category').isIn(['academic', 'administrative', 'infrastructure', 'financial', 'network', 'password', 'additional_credit', 'other']).withMessage('Invalid category'),
   body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Invalid priority')
 ], async (req, res) => {
   try {

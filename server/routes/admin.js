@@ -528,6 +528,78 @@ router.get('/dashboard/complaints', adminAuth, async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/complaints/:id/status
+// @desc    Update complaint status (admin)
+// @access  Private (admin)
+router.put('/complaints/:id/status', [
+  adminAuth,
+  body('status').isIn(['pending', 'in_progress', 'resolved', 'closed']).withMessage('Invalid status')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { status } = req.body;
+    const complaint = await Complaint.findById(req.params.id);
+
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    // Check if admin has permission to access this complaint
+    const admin = await Admin.findById(req.admin.id);
+    if (!admin.permissions.canSeeAllComplaints && !admin.permissions.visibleCategories.includes(complaint.category)) {
+      return res.status(403).json({ message: 'You do not have permission to update this complaint' });
+    }
+
+    complaint.status = status;
+    await complaint.save();
+
+    res.json({ message: 'Status updated successfully', complaint });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/complaints/:id/priority
+// @desc    Update complaint priority (admin)
+// @access  Private (admin)
+router.put('/complaints/:id/priority', [
+  adminAuth,
+  body('priority').isIn(['low', 'medium', 'high', 'urgent']).withMessage('Invalid priority')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { priority } = req.body;
+    const complaint = await Complaint.findById(req.params.id);
+
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    // Check if admin has permission to access this complaint
+    const admin = await Admin.findById(req.admin.id);
+    if (!admin.permissions.canSeeAllComplaints && !admin.permissions.visibleCategories.includes(complaint.category)) {
+      return res.status(403).json({ message: 'You do not have permission to update this complaint' });
+    }
+
+    complaint.priority = priority;
+    await complaint.save();
+
+    res.json({ message: 'Priority updated successfully', complaint });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/admin/dashboard/stats
 // @desc    Get dashboard statistics
 // @access  Private (admin)
