@@ -5,35 +5,36 @@ const Notification = require('../models/Notification');
 const Admin = require('../models/Admin');
 const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
+const bothAuth = require('../middleware/bothAuth');
 
 const router = express.Router();
 
 // @route   GET /api/complaints
 // @desc    Get all complaints (with filters)
 // @access  Private (Admin/Student)
-router.get('/', auth, async (req, res) => {
+router.get('/', bothAuth, async (req, res) => {
   try {
     const { status, category, priority, page = 1, limit = 10 } = req.query;
     
     let query = {};
     
-    // Apply filters based on user role
-    if (req.user.role === 'student') {
+    // Apply filters based on principal
+    if (req.user && req.user.role === 'student') {
       query.submittedBy = req.user.id;
-    } else if (req.user.role === 'admin') {
-      // Admin can only see complaints in their authorized categories
-      const admin = await Admin.findById(req.user.id);
-      if (admin && admin.adminLevel !== 'super_admin') {
-        query.category = { $in: admin.accessCategories };
+    } else if (req.admin) {
+      // Admin can only see complaints in their authorized categories (unless super_admin or full access)
+      if (req.admin.adminLevel !== 'super_admin' && !(req.admin.permissions && req.admin.permissions.canSeeAllComplaints)) {
+        query.category = { $in: req.admin.permissions?.visibleCategories || [] };
       }
     }
     
     if (status) query.status = status;
     if (category) {
       // Check if admin has access to this category
-      if (req.user.role === 'admin') {
-        const admin = await Admin.findById(req.user.id);
-        if (admin && admin.adminLevel !== 'super_admin' && !admin.accessCategories.includes(category)) {
+      if (req.admin) {
+        const hasAll = req.admin.permissions?.canSeeAllComplaints;
+        const list = req.admin.permissions?.visibleCategories || [];
+        if (req.admin.adminLevel !== 'super_admin' && !hasAll && !list.includes(category)) {
           return res.status(403).json({ message: 'Access denied to this category' });
         }
       }
@@ -91,7 +92,7 @@ router.get('/:id', auth, async (req, res) => {
 // @route   POST /api/complaints
 // @desc    Create a new complaint
 // @access  Private
-router.post('/', auth, [
+router.post('/', bothAuth, [
   body('title').notEmpty().withMessage('Title is required'),
   body('description').notEmpty().withMessage('Description is required'),
   body('category').isIn(['academic', 'administrative', 'infrastructure', 'financial', 'network', 'password', 'additional_credit', 'other']).withMessage('Invalid category'),
@@ -105,12 +106,13 @@ router.post('/', auth, [
 
     const { title, description, category, priority } = req.body;
 
+    const submittedBy = req.user ? req.user.id : null;
     const complaint = new Complaint({
       title,
       description,
       category,
       priority: priority || 'medium',
-      submittedBy: req.user.id
+      submittedBy
     });
 
     await complaint.save();
@@ -138,7 +140,7 @@ router.post('/', auth, [
 // @route   PUT /api/complaints/:id
 // @desc    Update complaint
 // @access  Private
-router.put('/:id', auth, [
+router.put('/:id', bothAuth, [
   body('status').optional().isIn(['pending', 'in_progress', 'resolved', 'closed']).withMessage('Invalid status'),
   body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Invalid priority'),
   body('assignedTo').optional().isMongoId().withMessage('Invalid assigned user')
@@ -155,7 +157,7 @@ router.put('/:id', auth, [
     }
 
     // Check permissions
-    if (req.user.role === 'student' && complaint.submittedBy.toString() !== req.user.id) {
+    if (req.user && req.user.role === 'student' && complaint.submittedBy.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -163,7 +165,7 @@ router.put('/:id', auth, [
 
     if (status) complaint.status = status;
     if (priority) complaint.priority = priority;
-    if (assignedTo && req.user.role === 'admin') complaint.assignedTo = assignedTo;
+    if (assignedTo && req.admin) complaint.assignedTo = assignedTo;
 
     await complaint.save();
 
@@ -189,7 +191,7 @@ router.put('/:id', auth, [
 // @route   DELETE /api/complaints/:id
 // @desc    Delete complaint
 // @access  Private
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', bothAuth, async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) {
@@ -197,7 +199,7 @@ router.delete('/:id', auth, async (req, res) => {
     }
 
     // Check permissions
-    if (req.user.role === 'student' && complaint.submittedBy.toString() !== req.user.id) {
+    if (req.user && req.user.role === 'student' && complaint.submittedBy.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -212,7 +214,7 @@ router.delete('/:id', auth, async (req, res) => {
 // @route   POST /api/complaints/:id/comments
 // @desc    Add comment to complaint
 // @access  Private
-router.post('/:id/comments', auth, [
+router.post('/:id/comments', bothAuth, [
   body('text').notEmpty().withMessage('Comment text is required')
 ], async (req, res) => {
   try {
@@ -226,8 +228,9 @@ router.post('/:id/comments', auth, [
       return res.status(404).json({ message: 'Complaint not found' });
     }
 
+    const author = req.user ? req.user.id : (req.admin ? req.admin.id : null);
     const comment = {
-      author: req.user.id,
+      author,
       text: req.body.text
     };
 
