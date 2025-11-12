@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 import './StaffSection.css';
 
 const StaffSection = ({ onSubmitComplaint }) => {
@@ -59,35 +60,54 @@ const StaffSection = ({ onSubmitComplaint }) => {
     }));
   };
 
+  const mapCategoryToServer = (valueOrLabel) => {
+    const v = (valueOrLabel || '').toLowerCase();
+    if (v.includes('network') || v.includes('internet')) return 'network';
+    if (v.includes('password')) return 'password';
+    if (v.includes('admin')) return 'administrative';
+    if (v.includes('payroll') || v.includes('finance') || v.includes('hr')) return 'financial';
+    if (v.includes('equipment') || v.includes('hardware') || v.includes('software') || v.includes('classroom') || v.includes('facility') || v.includes('technical')) return 'infrastructure';
+    if (v.includes('result') || v.includes('academic')) return 'academic';
+    return 'other';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const serverCategory = mapCategoryToServer(formData.category);
+      const payload = {
+        title: `${serverCategory.toUpperCase()} issue - ${formData.staffId || 'staff'}`,
+        description: formData.description,
+        category: serverCategory,
+        priority: formData.priority
+      };
 
-    const complaint = {
-      ...formData,
-      type: 'staff',
-      category: categories.find(cat => cat.value === formData.category)?.label || formData.category
-    };
+      await axios.post('/api/complaints', payload);
 
-    onSubmitComplaint(complaint);
-    
-    setShowSuccess(true);
-    setFormData({
-      name: '',
-      staffId: '',
-      email: '',
-      department: '',
-      category: '',
-      priority: 'medium',
-      description: '',
-      contactNumber: ''
-    });
-    setIsSubmitting(false);
+      setShowSuccess(true);
+      if (typeof onSubmitComplaint === 'function') {
+        onSubmitComplaint({ ...payload, timestamp: new Date().toISOString(), status: 'pending' });
+      }
 
-    setTimeout(() => setShowSuccess(false), 5000);
+      setFormData({
+        name: '',
+        staffId: '',
+        email: '',
+        department: '',
+        category: '',
+        priority: 'medium',
+        description: '',
+        contactNumber: ''
+      });
+    } catch (err) {
+      console.error('Failed to submit staff complaint:', err);
+      alert(err.response?.data?.message || 'Failed to submit complaint');
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setShowSuccess(false), 5000);
+    }
   };
 
   const containerVariants = {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 import UserComplaints from '../UserComplaints/UserComplaints';
 import InternetPopup from './InternetPopup';
 import './StudentSection.css';
@@ -51,39 +52,57 @@ const StudentSection = ({ onSubmitComplaint, userComplaints }) => {
     }));
   };
 
+  const mapCategoryToServer = (valueOrLabel) => {
+    const v = (valueOrLabel || '').toLowerCase();
+    if (v.includes('internet') || v.includes('network')) return 'network';
+    if (v.includes('additional')) return 'additional_credit';
+    if (v.includes('password')) return 'password';
+    if (v.includes('payment') || v.includes('finance') || v.includes('fee')) return 'financial';
+    if (v.includes('hostel') || v.includes('accommodation') || v.includes('classroom') || v.includes('facility')) return 'infrastructure';
+    if (v.includes('course') || v.includes('transcript') || v.includes('result')) return 'academic';
+    if (v.includes('admin')) return 'administrative';
+    return 'other';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const serverCategory = mapCategoryToServer(formData.category);
+      const payload = {
+        title: `${serverCategory.toUpperCase()} issue - ${formData.studentId || formData.matricNumber || 'student'}`,
+        description: formData.description,
+        category: serverCategory,
+        priority: formData.priority,
+        matricNumber: formData.matricNumber || null,
+        preferredPassword: formData.preferredPassword || null
+      };
 
-    const complaint = {
-      ...formData,
-      type: 'student',
-      category: categories.find(cat => cat.value === formData.category)?.label || formData.category,
-      // Ensure internet complaints are properly categorized
-      ...(formData.category === 'internet-network' && {
-        category: 'Internet/Network Problems'
-      })
-    };
+      await axios.post('/api/complaints', payload);
 
-    onSubmitComplaint(complaint);
-    
-    setShowSuccess(true);
-    setFormData({
-      name: '',
-      studentId: '',
-      email: '',
-      category: '',
-      priority: 'medium',
-      description: '',
-      matricNumber: '',
-      preferredPassword: ''
-    });
-    setIsSubmitting(false);
+      setShowSuccess(true);
+      if (typeof onSubmitComplaint === 'function') {
+        onSubmitComplaint({ ...payload, timestamp: new Date().toISOString(), status: 'pending' });
+      }
 
-    setTimeout(() => setShowSuccess(false), 5000);
+      setFormData({
+        name: '',
+        studentId: '',
+        email: '',
+        category: '',
+        priority: 'medium',
+        description: '',
+        matricNumber: '',
+        preferredPassword: ''
+      });
+    } catch (err) {
+      console.error('Failed to submit complaint:', err);
+      alert(err.response?.data?.message || 'Failed to submit complaint');
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setShowSuccess(false), 5000);
+    }
   };
 
   const containerVariants = {
