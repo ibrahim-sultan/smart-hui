@@ -31,7 +31,7 @@ Root (or run from each package as noted):
 - Start client only (dev)
   - npm run client:dev
 
-- Build client (production bundle served by server when NODE_ENV=production)
+- Build client (React SPA build output in client/build; Express serving is controlled by SERVE_CLIENT)
   - npm run build
   - or: npm run client:build
 
@@ -47,7 +47,9 @@ Root (or run from each package as noted):
 Server maintenance scripts (run from repo root unless noted):
 - Create initial super admin (legacy script): npm run --prefix server create-super-admin
 - Reset super admin (preferred): node server/scripts/resetSuperAdmin.js
-- Utilities: npm run --prefix server check-users | fix-users | check-admins | fix-admins (see scripts/)
+- Utilities:
+  - npm run --prefix server check-users | fix-users
+  - node server/scripts/checkAdmins.js | node server/scripts/fixAdmins.js
 
 Debug endpoints (development aid):
 - POST /api/debug/test-login
@@ -65,6 +67,7 @@ Create server/.env (see README.md and .env.example if present). Important variab
 - PORT (defaults to 5000)
 - EMAIL_USER, EMAIL_PASS (for password reset emails)
 - CLIENT_URL (used in password reset links)
+- Node version: use the version in .nvmrc (currently 18.x); engines in package.json require >=16, so prefer Node 18 for local development.
 
 client/package.json sets "proxy": "http://localhost:5000" for dev.
 
@@ -72,8 +75,7 @@ client/package.json sets "proxy": "http://localhost:5000" for dev.
 
 Monorepo orchestration
 - Root package.json scripts orchestrate server and client with concurrently
-- Production: server serves static client build if NODE_ENV=production and client/build exists
-
+- Production: Express can serve the client/build bundle when SERVE_CLIENT=true (see render.yaml); otherwise it runs API-only while the React app is hosted separately (e.g. Netlify)
 Backend (server/)
 - Entry: server/index.js
   - Loads routes and middleware, connects to MongoDB, exposes /api/health and /api/debug/build
@@ -116,8 +118,8 @@ Frontend (client/)
 
 ## Operational notes for Warp
 - Prefer node scripts via root package.json to coordinate both apps (npm run dev)
-- For admin-related testing, use the debug endpoints or run server/scripts/resetSuperAdmin.js to recreate a known-good super admin, then follow server/ADMIN_SYSTEM_README.md
-- When testing production behavior locally, build the client (npm run build) and set NODE_ENV=production before starting the server to verify static serving behavior
+- For admin-related testing, use the debug endpoints or run server/scripts/resetSuperAdmin.js to recreate a known-good super admin; treat IMPLEMENTATION_SUMMARY.md and RENDER_DEPLOYMENT_GUIDE.md as the source of truth for current super-admin credentials, as server/ADMIN_SYSTEM_README.md documents the earlier create-super-admin flow.
+- When testing production behavior locally, build the client (npm run build) and start the server with SERVE_CLIENT=true (for example via run_prod.js) so it serves client/build instead of API-only mode.
 - If tests are added in client, use CRA’s pattern matching to target a single test; there is no standalone lint script defined in this repo
 
 ## Pointers to critical files

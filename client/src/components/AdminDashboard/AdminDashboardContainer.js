@@ -69,8 +69,19 @@ const AdminDashboardContainer = () => {
   const handleStatusChange = async (complaintId, newStatus) => {
     try {
       const adminToken = localStorage.getItem('adminToken');
+
+      let resolutionText;
+      if (newStatus === 'resolved') {
+        // Simple prompt for a resolution remark when marking as resolved
+        resolutionText = window.prompt('Enter resolution remark (optional):', '');
+      }
+
+      const payload = resolutionText !== undefined && resolutionText !== null
+        ? { status: newStatus, resolutionText }
+        : { status: newStatus };
+
       await axios.put(`/api/complaints/${complaintId}`,
-        { status: newStatus },
+        payload,
         { headers: { Authorization: `Bearer ${adminToken}` }}
       );
       fetchComplaints();

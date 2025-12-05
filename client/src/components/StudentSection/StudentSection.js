@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { useAuth } from '../../contexts/AuthContext';
 import UserComplaints from '../UserComplaints/UserComplaints';
 import InternetPopup from './InternetPopup';
 import './StudentSection.css';
 
-const StudentSection = ({ onSubmitComplaint, userComplaints }) => {
+const StudentSection = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     surname: '',
     otherName: '',
@@ -22,6 +24,7 @@ const StudentSection = ({ onSubmitComplaint, userComplaints }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showAdviserPopup, setShowAdviserPopup] = useState(false);
   const [showInternetPopup, setShowInternetPopup] = useState(false);
+  const [userComplaints, setUserComplaints] = useState([]);
 
   const categories = [
     { value: 'Change of Course', label: 'Change of Course', icon: '📝' },
@@ -64,6 +67,33 @@ const StudentSection = ({ onSubmitComplaint, userComplaints }) => {
     return 'other';
   };
 
+  const fetchUserComplaints = async () => {
+    try {
+      const response = await axios.get('/api/complaints');
+      const data = response.data.complaints || [];
+      const mapped = data.map(c => ({
+        id: c._id,
+        category: c.category,
+        description: c.description,
+        priority: c.priority,
+        status: c.status,
+        timestamp: c.createdAt,
+        lastUpdated: c.updatedAt,
+        resolutionText: c.resolution?.text,
+        resolvedAt: c.resolution?.resolvedAt,
+      }));
+      setUserComplaints(mapped);
+    } catch (err) {
+      console.error('Failed to load your complaints:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUserComplaints();
+    }
+  }, [user]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -82,9 +112,8 @@ const StudentSection = ({ onSubmitComplaint, userComplaints }) => {
       await axios.post('/api/complaints', payload);
 
       setShowSuccess(true);
-      if (typeof onSubmitComplaint === 'function') {
-        onSubmitComplaint({ ...payload, timestamp: new Date().toISOString(), status: 'pending' });
-      }
+      // Refresh list so student sees their new complaint and future status changes from admins
+      fetchUserComplaints();
 
       setFormData({
         name: '',
@@ -301,21 +330,21 @@ const StudentSection = ({ onSubmitComplaint, userComplaints }) => {
           <p>Real-time status updates for your submitted complaints</p>
         </div>
         
-        {userComplaints.length > 0 && (
-          <div className="progress-summary">
-            <div className="progress-stats">
-              <div className="stat-item">
-                <span className="stat-number">{userComplaints.filter(c => c.status === 'pending').length}</span>
-                <span className="stat-label">Pending</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">{userComplaints.filter(c => c.status === 'in-progress').length}</span>
-                <span className="stat-label">In Progress</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">{userComplaints.filter(c => c.status === 'resolved').length}</span>
-                <span className="stat-label">Resolved</span>
-              </div>
+            {userComplaints.length > 0 && (
+              <div className="progress-summary">
+                <div className="progress-stats">
+                  <div className="stat-item">
+                    <span className="stat-number">{userComplaints.filter(c => c.status === 'pending').length}</span>
+                    <span className="stat-label">Pending</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{userComplaints.filter(c => c.status === 'in_progress' || c.status === 'in-progress').length}</span>
+                    <span className="stat-label">In Progress</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{userComplaints.filter(c => c.status === 'resolved').length}</span>
+                    <span className="stat-label">Resolved</span>
+                  </div>
             </div>
           </div>
         )}
@@ -375,7 +404,6 @@ const StudentSection = ({ onSubmitComplaint, userComplaints }) => {
             lastUpdated: new Date().toISOString()
           };
           
-          onSubmitComplaint(internetComplaint);
           setShowSuccess(true);
           setTimeout(() => setShowSuccess(false), 5000);
         }}

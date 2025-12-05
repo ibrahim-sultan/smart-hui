@@ -28,6 +28,14 @@ const AdminManagement = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // User password reset state
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetStudentId, setResetStudentId] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
+
   const { isSuperAdmin, admin } = useAdminAuth();
 
   useEffect(() => {
@@ -126,6 +134,41 @@ const AdminManagement = () => {
     }
   };
 
+  const handleResetUserPassword = async (e) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetMessage('');
+    setResetError('');
+
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      const payload = {};
+      if (resetEmail) payload.email = resetEmail;
+      if (resetStudentId) payload.studentId = resetStudentId;
+
+      if (!payload.email && !payload.studentId) {
+        setResetError('Please enter an email or student ID.');
+        setResetLoading(false);
+        return;
+      }
+
+      const response = await axios.post('/api/admin/users/reset-password', payload, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+
+      setResetMessage(
+        `Password reset for ${response.data.user.email}. Default password: ${response.data.defaultPassword}`
+      );
+      setResetEmail('');
+      setResetStudentId('');
+    } catch (error) {
+      console.error('Error resetting user password:', error);
+      setResetError(error.response?.data?.message || 'Failed to reset user password');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   if (!isSuperAdmin()) {
     return (
       <div className="access-denied">
@@ -216,6 +259,43 @@ const AdminManagement = () => {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Student/Staff Password Reset Section */}
+      <div className="user-password-reset">
+        <h3>Reset Student/Staff Password</h3>
+        <p className="section-help">
+          Use this tool when a student or staff forgets their password. Their password will be reset to the default
+          value <code>passwordhui</code>, and they should log in and change it to their desired password.
+        </p>
+        <form onSubmit={handleResetUserPassword} className="reset-form">
+          {resetError && <div className="error-message">{resetError}</div>}
+          {resetMessage && <div className="success-message">{resetMessage}</div>}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Email (optional)</label>
+              <input
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                placeholder="student/staff email"
+              />
+            </div>
+            <div className="form-group">
+              <label>Student ID (optional)</label>
+              <input
+                type="text"
+                value={resetStudentId}
+                onChange={(e) => setResetStudentId(e.target.value)}
+                placeholder="student ID (if available)"
+              />
+            </div>
+          </div>
+          <p className="form-note">Enter at least one of email or student ID.</p>
+          <button type="submit" disabled={resetLoading} className="reset-btn">
+            {resetLoading ? 'Resetting...' : 'Reset Password to Default'}
+          </button>
+        </form>
       </div>
 
       <AnimatePresence>

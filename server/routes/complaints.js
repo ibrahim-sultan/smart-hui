@@ -19,7 +19,8 @@ router.get('/', bothAuth, async (req, res) => {
     let query = {};
     
     // Apply filters based on principal
-    if (req.user && req.user.role === 'student') {
+    if (req.user && (req.user.role === 'student' || req.user.role === 'staff')) {
+      // Students and staff should only see their own complaints
       query.submittedBy = req.user.id;
     } else if (req.admin) {
       // Admin can only see complaints in their authorized categories (unless super_admin or full access)
@@ -78,7 +79,7 @@ router.get('/:id', auth, async (req, res) => {
     }
 
     // Check if user has access to this complaint
-    if (req.user.role === 'student' && complaint.submittedBy._id.toString() !== req.user.id) {
+    if ((req.user.role === 'student' || req.user.role === 'staff') && complaint.submittedBy._id.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -143,7 +144,8 @@ router.post('/', bothAuth, [
 router.put('/:id', bothAuth, [
   body('status').optional().isIn(['pending', 'in_progress', 'resolved', 'closed']).withMessage('Invalid status'),
   body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Invalid priority'),
-  body('assignedTo').optional().isMongoId().withMessage('Invalid assigned user')
+  body('assignedTo').optional().isMongoId().withMessage('Invalid assigned user'),
+  body('resolutionText').optional().isString().trim().isLength({ max: 2000 }).withMessage('Resolution text is too long')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -161,11 +163,36 @@ router.put('/:id', bothAuth, [
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const { status, priority, assignedTo } = req.body;
+    const { status, priority, assignedTo, resolutionText } = req.body;
 
     if (status) complaint.status = status;
     if (priority) complaint.priority = priority;
     if (assignedTo && req.admin) complaint.assignedTo = assignedTo;
+
+    // Allow admins to record a resolution remark when updating a complaint
+    if (req.admin && typeof resolutionText === 'string') {
+      if (!complaint.resolution) {
+        complaint.resolution = {};
+      }
+      complaint.resolution.text = resolutionText;
+      complaint.resolution.resolvedBy = req.admin.id;
+      if (status === 'resolved' || !complaint.resolution.resolvedAt) {
+        complaint.resolution.resolvedAt = new Date();
+      }
+    }
+
+    // If admin sets status to resolved without an explicit remark, still stamp resolver/timestamp
+    if (req.admin && status === 'resolved') {
+      if (!complaint.resolution) {
+        complaint.resolution = {};
+      }
+      if (!complaint.resolution.resolvedBy) {
+        complaint.resolution.resolvedBy = req.admin.id;
+      }
+      if (!complaint.resolution.resolvedAt) {
+        complaint.resolution.resolvedAt = new Date();
+      }
+    }
 
     await complaint.save();
 

@@ -6,8 +6,10 @@ const UserComplaints = ({ complaints }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return '#f59e0b';
-      case 'in-progress': return '#3b82f6';
+      case 'in-progress':
+      case 'in_progress': return '#3b82f6';
       case 'resolved': return '#10b981';
+      case 'closed': return '#6b7280';
       default: return '#6b7280';
     }
   };
@@ -102,7 +104,7 @@ const UserComplaints = ({ complaints }) => {
                 </div>
               </div>
 
-              {complaint.status === 'in-progress' && (
+              {(complaint.status === 'in-progress' || complaint.status === 'in_progress') && (
                 <div className="progress-indicator">
                   <div className="progress-bar">
                     <div className="progress-fill" style={{ width: '60%' }}></div>
@@ -114,6 +116,12 @@ const UserComplaints = ({ complaints }) => {
               {complaint.status === 'resolved' && (
                 <div className="resolved-indicator">
                   <span>✅ Resolved</span>
+                  {complaint.resolutionText && (
+                    <p className="resolution-text">Remark: {complaint.resolutionText}</p>
+                  )}
+                  {complaint.resolvedAt && (
+                    <p className="resolution-date">Resolved on: {formatDate(complaint.resolvedAt)}</p>
+                  )}
                 </div>
               )}
             </motion.div>

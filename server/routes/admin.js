@@ -3,8 +3,11 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const Admin = require('../models/Admin');
 const Complaint = require('../models/Complaint');
+const User = require('../models/User');
 const { adminAuth, adminAuthorize } = require('../middleware/adminAuth');
 const crypto = require('crypto');
+
+const DEFAULT_USER_PASSWORD = process.env.DEFAULT_USER_PASSWORD || 'passwordhui';
 
 const router = express.Router();
 
@@ -689,6 +692,60 @@ router.put('/permissions/:id', [
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/users/reset-password
+// @desc    Reset a student/staff password to the default value so they can log in and change it
+// @access  Private (super admin)
+router.post('/users/reset-password', [
+  adminAuth,
+  adminAuthorize('super_admin'),
+  body('email').optional().isEmail().withMessage('Valid email is required'),
+  body('studentId').optional().isString().withMessage('studentId must be a string')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, studentId } = req.body;
+
+    if (!email && !studentId) {
+      return res.status(400).json({ message: 'Email or studentId is required' });
+    }
+
+    let user;
+    if (email) {
+      user = await User.findOne({ email: email.toLowerCase() });
+    } else {
+      user = await User.findOne({ studentId });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Reset password to default; pre-save hook will hash it
+    user.password = DEFAULT_USER_PASSWORD;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpiry = undefined;
+    await user.save();
+
+    res.json({
+      message: 'User password reset to default value. Ask the user to log in with the default password and then change it.',
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        studentId: user.studentId || null
+      },
+      defaultPassword: DEFAULT_USER_PASSWORD
+    });
+  } catch (error) {
+    console.error('Error resetting user password:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

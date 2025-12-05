@@ -162,10 +162,7 @@ function AppContent() {
             user ? <Navigate to={getRedirectPath()} replace /> : <Login />
           } />
           
-          {/* Registration Route */}
-          <Route path="/register" element={
-            user ? <Navigate to={getRedirectPath()} replace /> : <Register />
-          } />
+          {/* Registration Route removed: accounts are managed by admins; self-registration disabled */}
           
           {/* Admin Login Route */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -218,10 +215,7 @@ function AppContent() {
                 exit={{ opacity: 0, x: 100 }}
                 transition={{ duration: 0.3 }}
               >
-                <StudentSection 
-                  onSubmitComplaint={addComplaint}
-                  userComplaints={getUserComplaints(user?.email)}
-                />
+                <StudentSection />
               </motion.div>
             </ProtectedRoute>
           } />
@@ -234,10 +228,7 @@ function AppContent() {
                 exit={{ opacity: 0, x: 100 }}
                 transition={{ duration: 0.3 }}
               >
-                <StaffSection 
-                  onSubmitComplaint={addComplaint}
-                  userComplaints={getUserComplaints(user?.email)}
-                />
+                <StaffSection />
               </motion.div>
             </ProtectedRoute>
           } />
