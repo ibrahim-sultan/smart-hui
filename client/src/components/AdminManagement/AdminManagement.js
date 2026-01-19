@@ -57,6 +57,7 @@ const AdminManagement = () => {
   const [bulkResults, setBulkResults] = useState([]);
   const [csvMessage, setCsvMessage] = useState('');
   const [csvError, setCsvError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
 
   const { isSuperAdmin, admin } = useAdminAuth();
 
@@ -392,6 +393,44 @@ const AdminManagement = () => {
     }
   };
 
+  const handleTemplateDownload = () => {
+    const headers = ['role','firstName','lastName','email','department','studentId','year'].join(',');
+    const row1 = ['student','Ada','Lovelace','ada@example.com','Computer Science','HUI/CSC/21/001','1st'].join(',');
+    const row2 = ['staff','Grace','Hopper','grace@example.com','ICT','',''].join(',');
+    const csv = `${headers}\n${row1}\n${row2}\n`;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'users_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      handleCSVUpload(files[0]);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+
   if (!isSuperAdmin()) {
     return (
       <div className="access-denied">
@@ -626,6 +665,11 @@ const AdminManagement = () => {
           Paste a JSON array of users with keys: role (student|staff), firstName, lastName, email, department, optional studentId and year for students.
         </p>
         <div className="form-group">
+          <button type="button" className="reset-btn" onClick={handleTemplateDownload}>
+            Download CSV Template
+          </button>
+        </div>
+        <div className="form-group">
           <label>Upload CSV (role,firstName,lastName,email,department,studentId,year)</label>
           <input
             type="file"
@@ -634,6 +678,19 @@ const AdminManagement = () => {
           />
           {csvError && <div className="error-message">{csvError}</div>}
           {csvMessage && <div className="success-message">{csvMessage}</div>}
+        </div>
+        <div
+          className={`modal-content`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{
+            border: '2px dashed #667eea',
+            padding: '1rem',
+            background: dragActive ? '#edf2f7' : 'transparent'
+          }}
+        >
+          <p>Drag and drop CSV here</p>
         </div>
         <form onSubmit={handleBulkCreateUsers} className="reset-form">
           {bulkError && <div className="error-message">{bulkError}</div>}
