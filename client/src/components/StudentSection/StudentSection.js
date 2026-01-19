@@ -158,9 +158,31 @@ const StudentSection = () => {
       animate="visible"
     >
       <div className="section-container">
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
-          <a href="/student/inbox"><button type="button">Course Inbox</button></a>
-          <a href="/student/request"><button type="button">Contact Lecturer</button></a>
+        <div className="quick-actions">
+          <motion.a
+            href="/student/inbox"
+            className="action-button inbox"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span className="action-icon">📬</span>
+            <div className="action-text">
+              <div className="action-title">Course Inbox</div>
+              <div className="action-subtitle">Messages and announcements</div>
+            </div>
+          </motion.a>
+          <motion.a
+            href="/student/request"
+            className="action-button contact"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span className="action-icon">👩‍🏫</span>
+            <div className="action-text">
+              <div className="action-title">Contact Lecturer</div>
+              <div className="action-subtitle">Start a conversation</div>
+            </div>
+          </motion.a>
         </div>
         <motion.div className="section-header" variants={itemVariants}>
           <div className="header-icon">🎓</div>
