@@ -10,7 +10,7 @@ const UserPasswordChange = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -38,6 +38,7 @@ const UserPasswordChange = () => {
       };
       await axios.put('/api/auth/change-password', payload);
       setSuccess('Password changed successfully!');
+      await refreshUser();
       const target =
         user?.role === 'staff' ? '/staff' :
         user?.role === 'student' ? '/student' :

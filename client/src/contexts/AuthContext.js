@@ -37,6 +37,12 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
+  const refreshUser = async () => {
+    try {
+      const response = await axios.get('/api/auth/me');
+      setUser(response.data);
+    } catch (error) {}
+  };
 
   const register = async (userData) => {
     try {
@@ -95,6 +101,7 @@ export const AuthProvider = ({ children }) => {
     isStaff,
     isStudent,
     loading
+    , refreshUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
