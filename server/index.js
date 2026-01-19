@@ -137,7 +137,43 @@ const connectDB = async () => {
   }
 };
 
-connectDB();
+const seedSuperAdminIfConfigured = async () => {
+  try {
+    if (process.env.SEED_SUPER_ADMIN === 'true') {
+      const email = process.env.SEED_SUPER_ADMIN_EMAIL;
+      const password = process.env.SEED_SUPER_ADMIN_PASSWORD;
+      const firstName = process.env.SEED_SUPER_ADMIN_FIRST_NAME || 'Super';
+      const lastName = process.env.SEED_SUPER_ADMIN_LAST_NAME || 'Administrator';
+      if (email && password) {
+        const Admin = require('./models/Admin');
+        const existing = await Admin.findOne({ adminLevel: 'super_admin' });
+        if (!existing) {
+          const superAdmin = new Admin({
+            username: 'superadmin',
+            email,
+            password,
+            firstName,
+            lastName,
+            adminLevel: 'super_admin',
+            isFirstLogin: false,
+            isActive: true,
+            permissions: {
+              canSeeAllComplaints: true,
+              visibleCategories: ['academic','administrative','infrastructure','financial','network','password','additional_credit','other'],
+              canManageAdmins: true
+            }
+          });
+          await superAdmin.save();
+          console.log('Super admin seeded:', email);
+        } else {
+          console.log('Super admin exists, skipping seed');
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Super admin seed error:', e.message);
+  }
+};
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -252,9 +288,8 @@ const PORT = process.env.PORT || 5000;
 // Async IIFE to handle startup sequence
 (async () => {
   try {
-    // The automatic reset on startup has been removed.
-    // It was dangerous for production.
-    // You can now reset the super admin using the debug tool.
+    await connectDB();
+    await seedSuperAdminIfConfigured();
 
     // Start the server
     app.listen(PORT, () => {
