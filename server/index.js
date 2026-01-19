@@ -178,8 +178,8 @@ app.get('/api/debug/build', (req, res) => {
   });
 });
 
-// Serve static files from React build only if explicitly enabled
-const SERVE_CLIENT = process.env.SERVE_CLIENT === 'true';
+// Serve static files from React build in production by default (or when explicitly enabled)
+const SERVE_CLIENT = process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production';
 
 if (SERVE_CLIENT) {
   const buildPath = path.join(__dirname, '../client/build');
