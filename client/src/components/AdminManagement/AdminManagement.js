@@ -36,6 +36,28 @@ const AdminManagement = () => {
   const [resetMessage, setResetMessage] = useState('');
   const [resetError, setResetError] = useState('');
 
+  // User onboarding state (create student/staff)
+  const [userForm, setUserForm] = useState({
+    role: 'student',
+    firstName: '',
+    lastName: '',
+    email: '',
+    department: '',
+    studentId: '',
+    year: ''
+  });
+  const [userLoading, setUserLoading] = useState(false);
+  const [userMessage, setUserMessage] = useState('');
+  const [userError, setUserError] = useState('');
+
+  const [bulkText, setBulkText] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState('');
+  const [bulkError, setBulkError] = useState('');
+  const [bulkResults, setBulkResults] = useState([]);
+  const [csvMessage, setCsvMessage] = useState('');
+  const [csvError, setCsvError] = useState('');
+
   const { isSuperAdmin, admin } = useAdminAuth();
 
   useEffect(() => {
@@ -169,6 +191,207 @@ const AdminManagement = () => {
     }
   };
 
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setUserLoading(true);
+    setUserMessage('');
+    setUserError('');
+
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      const payload = {
+        role: userForm.role,
+        firstName: userForm.firstName.trim(),
+        lastName: userForm.lastName.trim(),
+        email: userForm.email.trim(),
+        department: userForm.department.trim(),
+        studentId: userForm.role === 'student' ? (userForm.studentId.trim() || undefined) : undefined,
+        year: userForm.role === 'student' ? (userForm.year || null) : null
+      };
+
+      const response = await axios.post('/api/admin/users/create', payload, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+
+      setUserMessage(
+        `User created: ${response.data.user.email} (${response.data.user.role}). Default password: ${response.data.defaultPassword}`
+      );
+      setUserForm({
+        role: 'student',
+        firstName: '',
+        lastName: '',
+        email: '',
+        department: '',
+        studentId: '',
+        year: ''
+      });
+    } catch (error) {
+      setUserError(error.response?.data?.message || 'Failed to create user');
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  const handleBulkCreateUsers = async (e) => {
+    e.preventDefault();
+    setBulkLoading(true);
+    setBulkMessage('');
+    setBulkError('');
+    setBulkResults([]);
+    try {
+      let users;
+      try {
+        users = JSON.parse(bulkText);
+      } catch {
+        setBulkError('Input must be valid JSON array');
+        setBulkLoading(false);
+        return;
+      }
+      if (!Array.isArray(users) || users.length === 0) {
+        setBulkError('Provide a non-empty JSON array of users');
+        setBulkLoading(false);
+        return;
+      }
+      const adminToken = localStorage.getItem('adminToken');
+      const response = await axios.post('/api/admin/users/bulk', { users }, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setBulkResults(response.data.results || []);
+      setBulkMessage(`Processed ${users.length} users. Default password: ${response.data.defaultPassword}`);
+      setBulkText('');
+    } catch (error) {
+      setBulkError(error.response?.data?.message || 'Failed to process bulk users');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const parseCSV = (text) => {
+    const rows = [];
+    let i = 0;
+    let current = '';
+    let row = [];
+    let inQuotes = false;
+    const pushCell = () => {
+      row.push(current);
+      current = '';
+    };
+    const pushRow = () => {
+      // ignore empty trailing rows
+      if (row.length > 0 && row.some(c => c.trim() !== '')) {
+        rows.push(row);
+      }
+      row = [];
+    };
+    while (i < text.length) {
+      const ch = text[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (text[i + 1] === '"') {
+            current += '"';
+            i += 2;
+            continue;
+          } else {
+            inQuotes = false;
+            i++;
+            continue;
+          }
+        } else {
+          current += ch;
+          i++;
+          continue;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+          i++;
+          continue;
+        }
+        if (ch === ',') {
+          pushCell();
+          i++;
+          continue;
+        }
+        if (ch === '\n') {
+          pushCell();
+          pushRow();
+          i++;
+          continue;
+        }
+        if (ch === '\r') {
+          // handle CRLF
+          pushCell();
+          pushRow();
+          if (text[i + 1] === '\n') i++;
+          i++;
+          continue;
+        }
+        current += ch;
+        i++;
+      }
+    }
+    // flush last cell/row
+    pushCell();
+    pushRow();
+    // map to objects using header row
+    if (rows.length < 2) return [];
+    const headers = rows[0].map(h => h.trim());
+    return rows.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => {
+        obj[h] = (r[idx] || '').trim();
+      });
+      return obj;
+    });
+  };
+
+  const handleCSVUpload = async (file) => {
+    setCsvMessage('');
+    setCsvError('');
+    setBulkResults([]);
+    if (!file) {
+      setCsvError('No file selected');
+      return;
+    }
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const text = String(e.target.result || '');
+          const items = parseCSV(text);
+          if (!Array.isArray(items) || items.length === 0) {
+            setCsvError('CSV has no data rows');
+            return;
+          }
+          // normalize to API expected shape
+          const users = items.map(u => ({
+            role: (u.role || '').toLowerCase() === 'staff' ? 'staff' : 'student',
+            firstName: u.firstName || '',
+            lastName: u.lastName || '',
+            email: u.email || '',
+            department: u.department || '',
+            studentId: u.studentId ? u.studentId : undefined,
+            year: u.year ? u.year : null
+          }));
+          setBulkLoading(true);
+          const adminToken = localStorage.getItem('adminToken');
+          const response = await axios.post('/api/admin/users/bulk', { users }, {
+            headers: { Authorization: `Bearer ${adminToken}` }
+          });
+          setBulkResults(response.data.results || []);
+          setCsvMessage(`Processed ${users.length} users from CSV. Default password: ${response.data.defaultPassword}`);
+        } catch (err) {
+          setCsvError(err.response?.data?.message || 'Failed to process CSV');
+        } finally {
+          setBulkLoading(false);
+        }
+      };
+      reader.readAsText(file);
+    } catch (error) {
+      setCsvError('Unable to read CSV file');
+    }
+  };
+
   if (!isSuperAdmin()) {
     return (
       <div className="access-denied">
@@ -296,6 +519,156 @@ const AdminManagement = () => {
             {resetLoading ? 'Resetting...' : 'Reset Password to Default'}
           </button>
         </form>
+      </div>
+
+      {/* User Onboarding Section */}
+      <div className="user-password-reset">
+        <h3>Onboard New Student/Staff</h3>
+        <p className="section-help">
+          Create a new student or staff account. The default password will be provided; the user should log in and change it on first use.
+        </p>
+        <form onSubmit={handleCreateUser} className="reset-form">
+          {userError && <div className="error-message">{userError}</div>}
+          {userMessage && <div className="success-message">{userMessage}</div>}
+          <div className="form-row">
+            <div className="form-group">
+              <label>Role</label>
+              <select
+                value={userForm.role}
+                onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+              >
+                <option value="student">Student</option>
+                <option value="staff">Staff</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Department</label>
+              <input
+                type="text"
+                value={userForm.department}
+                onChange={(e) => setUserForm({ ...userForm, department: e.target.value })}
+                placeholder="e.g., Computer Science"
+                required
+              />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>First Name</label>
+              <input
+                type="text"
+                value={userForm.firstName}
+                onChange={(e) => setUserForm({ ...userForm, firstName: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Last Name</label>
+              <input
+                type="text"
+                value={userForm.lastName}
+                onChange={(e) => setUserForm({ ...userForm, lastName: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={userForm.email}
+                onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                required
+                placeholder="name@example.com"
+              />
+            </div>
+            {userForm.role === 'student' && (
+              <div className="form-group">
+                <label>Student ID (optional)</label>
+                <input
+                  type="text"
+                  value={userForm.studentId}
+                  onChange={(e) => setUserForm({ ...userForm, studentId: e.target.value })}
+                  placeholder="e.g., HUI/CSC/21/001"
+                />
+              </div>
+            )}
+          </div>
+          {userForm.role === 'student' && (
+            <div className="form-row">
+              <div className="form-group">
+                <label>Year (optional)</label>
+                <select
+                  value={userForm.year}
+                  onChange={(e) => setUserForm({ ...userForm, year: e.target.value })}
+                >
+                  <option value="">Not set</option>
+                  <option value="1st">1st</option>
+                  <option value="2nd">2nd</option>
+                  <option value="3rd">3rd</option>
+                  <option value="4th">4th</option>
+                  <option value="5th">5th</option>
+                </select>
+              </div>
+            </div>
+          )}
+          <button type="submit" disabled={userLoading} className="reset-btn">
+            {userLoading ? 'Creating...' : 'Create User'}
+          </button>
+        </form>
+      </div>
+
+      {/* Bulk Onboarding Section */}
+      <div className="user-password-reset">
+        <h3>Bulk Onboard Students/Staff</h3>
+        <p className="section-help">
+          Paste a JSON array of users with keys: role (student|staff), firstName, lastName, email, department, optional studentId and year for students.
+        </p>
+        <div className="form-group">
+          <label>Upload CSV (role,firstName,lastName,email,department,studentId,year)</label>
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(e) => handleCSVUpload(e.target.files?.[0])}
+          />
+          {csvError && <div className="error-message">{csvError}</div>}
+          {csvMessage && <div className="success-message">{csvMessage}</div>}
+        </div>
+        <form onSubmit={handleBulkCreateUsers} className="reset-form">
+          {bulkError && <div className="error-message">{bulkError}</div>}
+          {bulkMessage && <div className="success-message">{bulkMessage}</div>}
+          <div className="form-group">
+            <label>Users JSON</label>
+            <textarea
+              className="cm-textarea"
+              rows={8}
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              placeholder='[{"role":"student","firstName":"A","lastName":"B","email":"a@example.com","department":"Computer Science","studentId":"HUI/CSC/21/001","year":"1st"},{"role":"staff","firstName":"C","lastName":"D","email":"c@example.com","department":"ICT"}]'
+              required
+            />
+          </div>
+          <button type="submit" disabled={bulkLoading} className="reset-btn">
+            {bulkLoading ? 'Processing...' : 'Process Bulk Users'}
+          </button>
+        </form>
+        {bulkResults.length > 0 && (
+          <div className="admins-list">
+            <h3>Bulk Results</h3>
+            <div className="admins-grid">
+              {bulkResults.map((r, idx) => (
+                <div key={idx} className="admin-card">
+                  <div className="admin-info">
+                    <h4>{r.email || 'N/A'}</h4>
+                    <p>Status: {r.status}</p>
+                    {r.reason && <p>Reason: {r.reason}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
