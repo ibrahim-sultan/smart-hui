@@ -24,11 +24,14 @@ const Header = () => {
         ];
       case 'staff':
         return [
-          { path: '/staff', label: 'Staff Portal', icon: '👨‍🏫' }
+          { path: '/staff', label: 'Staff Portal', icon: '👨‍🏫' },
+          { path: '/staff/courses', label: 'Manage Courses', icon: '📚' }
         ];
       case 'student':
         return [
-          { path: '/student', label: 'Student Portal', icon: '🎓' }
+          { path: '/student', label: 'Student Portal', icon: '🎓' },
+          { path: '/student/inbox', label: 'Course Inbox', icon: '✉️' },
+          { path: '/student/request', label: 'Contact Lecturer', icon: '📬' }
         ];
       default:
         return [];

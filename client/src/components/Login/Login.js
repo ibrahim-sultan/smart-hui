@@ -19,19 +19,22 @@ const Login = () => {
     try {
       const user = await login(credentials.email, credentials.password);
       
-      // Redirect based on user role
-      switch (user.role) {
-        case 'admin':
-          navigate('/admin');
-          break;
-        case 'staff':
-          navigate('/staff');
-          break;
-        case 'student':
-          navigate('/student');
-          break;
-        default:
-          navigate('/login');
+      if ((user.role === 'student' || user.role === 'staff') && user.isFirstLogin) {
+        navigate('/change-password');
+      } else {
+        switch (user.role) {
+          case 'admin':
+            navigate('/admin');
+            break;
+          case 'staff':
+            navigate('/staff');
+            break;
+          case 'student':
+            navigate('/student');
+            break;
+          default:
+            navigate('/login');
+        }
       }
     } catch (error) {
       setError(error.response?.data?.message || 'Login failed. Please check your credentials.');

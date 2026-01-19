@@ -9,64 +9,8 @@ const router = express.Router();
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
-router.post('/register', [
-  body('firstName').notEmpty().withMessage('First name is required'),
-  body('lastName').notEmpty().withMessage('Last name is required'),
-  body('email').isEmail().withMessage('Please provide a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { firstName, lastName, email, password, role, studentId, department, year } = req.body;
-
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    if (role === 'student' && studentId) {
-      const existingStudent = await User.findOne({ studentId });
-      if (existingStudent) {
-        return res.status(400).json({ message: 'Student ID already exists' });
-      }
-    }
-
-    user = new User({
-      firstName,
-      lastName,
-      email,
-      password,
-      role: role || 'student',
-      studentId,
-      department,
-      year: year === '' ? null : year
-    });
-
-    await user.save();
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-    res.status(201).json({
-      token,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        studentId: user.studentId,
-        department: user.department,
-        year: user.year
-      }
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.post('/register', async (req, res) => {
+  return res.status(403).json({ message: 'Registration is disabled. Please contact an admin to create your account.' });
 });
 
 // @route   POST /api/auth/login
@@ -110,7 +54,8 @@ router.post('/login', [
         role: user.role,
         studentId: user.studentId,
         department: user.department,
-        year: user.year
+        year: user.year,
+        isFirstLogin: user.isFirstLogin
       }
     });
   } catch (error) {
@@ -126,6 +71,34 @@ router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Change password (users)
+router.put('/change-password', [
+  auth,
+  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('currentPassword').optional().isString()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { newPassword, currentPassword } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user.isFirstLogin) {
+      const ok = await user.comparePassword(currentPassword || '');
+      if (!ok) return res.status(400).json({ message: 'Current password incorrect' });
+    }
+    user.password = newPassword;
+    user.isFirstLogin = false;
+    await user.save();
+    res.json({ message: 'Password changed successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

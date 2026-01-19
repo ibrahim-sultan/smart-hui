@@ -6,19 +6,23 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import Header from './components/Header/Header';
 import Login from './components/Login/Login';
 import AdminLogin from './components/AdminLogin/AdminLogin';
-import Register from './components/Register/Register';
 import StudentSection from './components/StudentSection/StudentSection';
 import StaffSection from './components/StaffSection/StaffSection';
+import CourseManager from './components/Courses/CourseManager';
+import MessageComposer from './components/Messaging/MessageComposer';
+import RequestQueue from './components/Requests/RequestQueue';
+import StudentInbox from './components/Messaging/StudentInbox';
+import StudentRequestForm from './components/Requests/StudentRequestForm';
 import AdminDashboard from './components/AdminDashboard/AdminDashboard';
 import AdminDashboardContainer from './components/AdminDashboard/AdminDashboardContainer';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute/AdminProtectedRoute';
-import AdminHeader from './components/AdminHeader/AdminHeader';
 import AdminManagement from './components/AdminManagement/AdminManagement';
 import AdminPasswordChange from './components/AdminPasswordChange/AdminPasswordChange';
 import AdminForgotPassword from './components/AdminForgotPassword/AdminForgotPassword';
 import AdminResetPassword from './components/AdminResetPassword/AdminResetPassword';
 import NotificationSystem from './components/NotificationSystem/NotificationSystem';
+import UserPasswordChange from './components/UserPasswordChange/UserPasswordChange';
 import './App.css';
 
 // Main App component with routing
@@ -40,20 +44,6 @@ function AppContent() {
     localStorage.setItem('notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  const addComplaint = (complaint) => {
-    const newComplaint = {
-      ...complaint,
-      id: Date.now(),
-      timestamp: new Date().toISOString(),
-      status: 'pending',
-      priority: complaint.priority || 'medium',
-      lastUpdated: new Date().toISOString(),
-      // Ensure InternetPopup data is included
-      matricNumber: complaint.matricNumber || '',
-      preferredPassword: complaint.preferredPassword || ''
-    };
-    setComplaints(prev => [...prev, newComplaint]);
-  };
 
   const updateComplaintPriority = (id, priority) => {
     setComplaints(prev => 
@@ -123,9 +113,6 @@ function AppContent() {
     );
   };
 
-  const getUserComplaints = (userEmail) => {
-    return complaints.filter(complaint => complaint.email === userEmail);
-  };
 
   // Redirect based on user role after login
   const getRedirectPath = () => {
@@ -180,6 +167,20 @@ function AppContent() {
             </AdminProtectedRoute>
           } />
           
+          {/* User Password Change Route - Students/Staff first login */}
+          <Route path="/change-password" element={
+            <ProtectedRoute allowedRoles={['student', 'staff']}>
+              <motion.div
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 100 }}
+                transition={{ duration: 0.3 }}
+              >
+                <UserPasswordChange />
+              </motion.div>
+            </ProtectedRoute>
+          } />
+          
           {/* Admin Dashboard Route - For regular admins and sub-admins to view complaints */}
           <Route path="/admin/dashboard" element={
             <AdminProtectedRoute allowedRoles={['admin', 'sub_admin']}>
@@ -219,6 +220,30 @@ function AppContent() {
               </motion.div>
             </ProtectedRoute>
           } />
+          <Route path="/student/inbox" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <motion.div
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 100 }}
+                transition={{ duration: 0.3 }}
+              >
+                <StudentInbox />
+              </motion.div>
+            </ProtectedRoute>
+          } />
+          <Route path="/student/request" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <motion.div
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 100 }}
+                transition={{ duration: 0.3 }}
+              >
+                <StudentRequestForm />
+              </motion.div>
+            </ProtectedRoute>
+          } />
           
           <Route path="/staff" element={
             <ProtectedRoute allowedRoles={['staff']}>
@@ -229,6 +254,42 @@ function AppContent() {
                 transition={{ duration: 0.3 }}
               >
                 <StaffSection />
+              </motion.div>
+            </ProtectedRoute>
+          } />
+          <Route path="/staff/courses" element={
+            <ProtectedRoute allowedRoles={['staff']}>
+              <motion.div
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 100 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CourseManager />
+              </motion.div>
+            </ProtectedRoute>
+          } />
+          <Route path="/staff/messaging/:courseId" element={
+            <ProtectedRoute allowedRoles={['staff']}>
+              <motion.div
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 100 }}
+                transition={{ duration: 0.3 }}
+              >
+                <MessageComposer />
+              </motion.div>
+            </ProtectedRoute>
+          } />
+          <Route path="/staff/requests/:courseId" element={
+            <ProtectedRoute allowedRoles={['staff']}>
+              <motion.div
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 100 }}
+                transition={{ duration: 0.3 }}
+              >
+                <RequestQueue />
               </motion.div>
             </ProtectedRoute>
           } />

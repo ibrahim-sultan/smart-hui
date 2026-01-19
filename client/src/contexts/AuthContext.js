@@ -31,7 +31,6 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.get('/api/auth/me');
       setUser(response.data);
     } catch (error) {
-      console.error('Error fetching user:', error);
       localStorage.removeItem('token');
       delete axios.defaults.headers.common['Authorization'];
     } finally {
