@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import AdminHeader from '../AdminHeader/AdminHeader';
 import axios from 'axios';
@@ -20,14 +20,8 @@ const AdminDashboardContainer = () => {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const { admin } = useAdminAuth();
 
-  useEffect(() => {
-    if (admin) {
-      fetchComplaints();
-      fetchStats();
-    }
-  }, [admin, filters]);
-
-  const fetchComplaints = async () => {
+  const fetchComplaints = useCallback(async () => {
+    if (!admin) return;
     setLoading(true);
     setError('');
     try {
@@ -52,9 +46,10 @@ const AdminDashboardContainer = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [admin, filters]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
+    if (!admin) return;
     try {
       const adminToken = localStorage.getItem('adminToken');
       const response = await axios.get('/api/admin/dashboard/stats', {
@@ -64,7 +59,12 @@ const AdminDashboardContainer = () => {
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  };
+  }, [admin]);
+
+  useEffect(() => {
+    fetchComplaints();
+    fetchStats();
+  }, [fetchComplaints, fetchStats]);
 
   const handleStatusChange = async (complaintId, newStatus) => {
     try {

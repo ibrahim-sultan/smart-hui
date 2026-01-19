@@ -165,6 +165,10 @@ const StaffSection = () => {
       animate="visible"
     >
       <div className="section-container">
+        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+          <a href="/staff/courses"><button type="button">Manage Courses</button></a>
+          <a href="/staff">Report Issue</a>
+        </div>
         <motion.div className="section-header" variants={itemVariants}>
           <div className="header-icon">👨‍🏫</div>
           <h2>Staff Issue Reporting Portal</h2>

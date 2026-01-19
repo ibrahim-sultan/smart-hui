@@ -31,6 +31,7 @@ console.log('Loading route modules...');
 
 // Import routes with error handling
 let authRoutes, userRoutes, complaintRoutes, notificationRoutes, passwordResetRoutes, adminRoutes, debugRoutes;
+let courseRoutes, messagingRoutes, requestRoutes;
 
 try {
   authRoutes = require('./routes/auth');
@@ -88,6 +89,29 @@ try {
   debugRoutes = null;
 }
 
+try {
+  courseRoutes = require('./routes/courses');
+  console.log('✓ Course routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load course routes:', err.message);
+  throw err;
+}
+
+try {
+  messagingRoutes = require('./routes/messaging');
+  console.log('✓ Messaging routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load messaging routes:', err.message);
+  throw err;
+}
+
+try {
+  requestRoutes = require('./routes/requests');
+  console.log('✓ Request routes loaded');
+} catch (err) {
+  console.error('✗ Failed to load request routes:', err.message);
+  throw err;
+}
 console.log('All route modules loaded successfully');
 
 const app = express();
@@ -122,6 +146,9 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/messaging', messagingRoutes);
+app.use('/api/requests', requestRoutes);
 
 // Debug routes (only in development/production for troubleshooting)
 if (debugRoutes) {

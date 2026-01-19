@@ -34,7 +34,6 @@ const StudentSection = () => {
     { value: 'Payment Issues', label: 'Payment Issues', icon: '💰' },
     { value: 'hostel', label: 'Hostel/Accommodation', icon: '🏠' },
     { value: 'Transcript request', label: 'Top-Up Course Registration', icon: '📝' },
-    { value: 'Additional Credit', label: 'Additional Credit', icon: '📚' },
     { value: 'Course details', label: 'Course details', icon: '📝' },
   ];
 
@@ -159,6 +158,10 @@ const StudentSection = () => {
       animate="visible"
     >
       <div className="section-container">
+        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+          <a href="/student/inbox"><button type="button">Course Inbox</button></a>
+          <a href="/student/request"><button type="button">Contact Lecturer</button></a>
+        </div>
         <motion.div className="section-header" variants={itemVariants}>
           <div className="header-icon">🎓</div>
           <h2>Student Complaint Portal</h2>
@@ -231,8 +234,8 @@ const StudentSection = () => {
                 required
               >
                 <option value="">Select a category</option>
-                {categories.map(category => (
-                  <option key={category.value} value={category.value}>
+                {categories.map((category, idx) => (
+                  <option key={`${category.value}-${idx}`} value={category.value}>
                     {category.icon} {category.label}
                   </option>
                 ))}
@@ -388,24 +391,24 @@ const StudentSection = () => {
         onClose={() => setShowInternetPopup(false)}
         onSubmit={(data) => {
           // Create a proper complaint from InternetPopup data
-          const cleanMatric = data.matricNumber.replace(/\//g, '');
-          const internetComplaint = {
-            name: formData.name || 'Student',
-            studentId: formData.studentId || data.matricNumber,
-            email: formData.email || `${cleanMatric}@alhikmah.edu.ng`,
-            category: 'internet-network',
-            priority: 'high',
+          const payload = {
+            title: `NETWORK issue - ${formData.studentId || data.matricNumber || 'student'}`,
             description: `Internet/Network access request - Matric: ${data.matricNumber}, Preferred Password: ${data.preferredPassword}`,
+            category: 'network',
+            priority: 'high',
             matricNumber: data.matricNumber,
-            preferredPassword: data.preferredPassword,
-            type: 'student',
-            timestamp: new Date().toISOString(),
-            status: 'pending',
-            lastUpdated: new Date().toISOString()
+            preferredPassword: data.preferredPassword
           };
-          
-          setShowSuccess(true);
-          setTimeout(() => setShowSuccess(false), 5000);
+          axios.post('/api/complaints', payload)
+            .then(() => {
+              setShowSuccess(true);
+              fetchUserComplaints();
+              setTimeout(() => setShowSuccess(false), 5000);
+            })
+            .catch(err => {
+              console.error('Failed to submit internet complaint:', err);
+              alert(err.response?.data?.message || 'Failed to submit complaint');
+            });
         }}
       />
     </motion.div>

@@ -11,6 +11,7 @@ const AdminPasswordChange = () => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const { admin, logout } = useAdminAuth();
   const navigate = useNavigate();
@@ -40,19 +41,15 @@ const AdminPasswordChange = () => {
 
     try {
       const adminToken = localStorage.getItem('adminToken');
-      const response = await axios.put('/api/admin/change-password',
+      await axios.put('/api/admin/change-password',
         { newPassword: passwords.newPassword },
         { headers: { Authorization: `Bearer ${adminToken}` }}
       );
 
-      console.log('Password change successful:', response.data);
-      
-      // Show success message briefly
-      alert('Password changed successfully! You will now be redirected to your dashboard.');
-      
-      // Force a page reload to ensure the admin state is updated
-      // This will trigger the AdminAuthContext to refetch the admin data
-      window.location.href = admin.adminLevel === 'super_admin' ? '/admin/manage' : '/admin/dashboard';
+      setSuccess('Password changed successfully! Redirecting to your dashboard...');
+      setTimeout(() => {
+        window.location.href = admin.adminLevel === 'super_admin' ? '/admin/manage' : '/admin/dashboard';
+      }, 1500);
       
     } catch (error) {
       console.error('Password change error:', error);
@@ -86,6 +83,7 @@ const AdminPasswordChange = () => {
         
         <form onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
           
           <div className="form-group">
             <label htmlFor="newPassword">New Password</label>

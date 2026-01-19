@@ -751,3 +751,101 @@ router.post('/users/reset-password', [
 });
 
 module.exports = router;
+ 
+// User management by super admin
+const { auth } = require('../middleware/auth');
+const { adminAuth: _adminAuth, adminAuthorize: _adminAuthorize } = require('../middleware/adminAuth');
+// Individual user create
+router.post('/users/create', [
+  adminAuth,
+  adminAuthorize('super_admin'),
+  body('role').isIn(['student', 'staff']).withMessage('role must be student or staff'),
+  body('firstName').notEmpty(),
+  body('lastName').notEmpty(),
+  body('email').isEmail(),
+  body('department').notEmpty(),
+  body('studentId').optional().isString()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { role, firstName, lastName, email, department, studentId, year } = req.body;
+    const existingEmail = await User.findOne({ email: email.toLowerCase() });
+    if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
+    if (role === 'student' && studentId) {
+      const existingStudent = await User.findOne({ studentId });
+      if (existingStudent) return res.status(400).json({ message: 'Student ID already exists' });
+    }
+    const user = new User({
+      firstName,
+      lastName,
+      email: email.toLowerCase(),
+      password: DEFAULT_USER_PASSWORD,
+      role,
+      studentId: role === 'student' ? (studentId || undefined) : undefined,
+      department,
+      year: year || null,
+      isFirstLogin: true
+    });
+    await user.save();
+    res.status(201).json({
+      message: 'User created',
+      user: { id: user._id, email: user.email, role: user.role, studentId: user.studentId || null },
+      defaultPassword: DEFAULT_USER_PASSWORD
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Bulk users create (JSON array)
+router.post('/users/bulk', [
+  adminAuth,
+  adminAuthorize('super_admin'),
+  body('users').isArray().withMessage('users must be an array')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const items = req.body.users || [];
+    const results = [];
+    for (const u of items) {
+      try {
+        const role = u.role;
+        if (!['student', 'staff'].includes(role)) throw new Error('Invalid role');
+        const email = (u.email || '').toLowerCase();
+        if (!email) throw new Error('Email required');
+        const exists = await User.findOne({ email });
+        if (exists) { results.push({ email, status: 'skipped', reason: 'Email exists' }); continue; }
+        if (role === 'student' && u.studentId) {
+          const sidExists = await User.findOne({ studentId: u.studentId });
+          if (sidExists) { results.push({ email, status: 'skipped', reason: 'Student ID exists' }); continue; }
+        }
+        const user = new User({
+          firstName: u.firstName,
+          lastName: u.lastName,
+          email,
+          password: DEFAULT_USER_PASSWORD,
+          role,
+          studentId: role === 'student' ? (u.studentId || undefined) : undefined,
+          department: u.department,
+          year: u.year || null,
+          isFirstLogin: true
+        });
+        await user.save();
+        results.push({ email, status: 'created' });
+      } catch (e) {
+        results.push({ email: u.email, status: 'error', reason: e.message });
+      }
+    }
+    res.json({ results, defaultPassword: DEFAULT_USER_PASSWORD });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});

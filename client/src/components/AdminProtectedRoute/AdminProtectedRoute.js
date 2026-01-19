@@ -1,9 +1,10 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 
 const AdminProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { admin, loading } = useAdminAuth();
+  const location = useLocation();
 
   if (loading) {
     return <div>Loading...</div>;
@@ -11,6 +12,10 @@ const AdminProtectedRoute = ({ children, allowedRoles = [] }) => {
 
   if (!admin) {
     return <Navigate to="/admin/login" replace />;
+  }
+
+  if (admin.isFirstLogin && location.pathname !== '/admin/change-password') {
+    return <Navigate to="/admin/change-password" replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(admin.adminLevel)) {

@@ -49,7 +49,7 @@ const AdminResetPassword = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('/api/admin/reset-password', {
+      await axios.post('/api/admin/reset-password', {
         token: formData.token,
         newPassword: formData.newPassword
       });
