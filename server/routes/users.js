@@ -14,6 +14,27 @@ router.get('/', auth, authorize('admin'), async (req, res) => {
   }
 });
 
+// Search students by query (staff can search)
+router.get('/search', auth, authorize('staff'), async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    if (q.length < 2) return res.json([]);
+    const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const students = await User.find({
+      role: 'student',
+      $or: [
+        { studentId: regex },
+        { email: regex },
+        { firstName: regex },
+        { lastName: regex }
+      ]
+    }).select('firstName lastName email studentId').limit(10);
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get user by ID
 router.get('/:id', auth, async (req, res) => {
   try {

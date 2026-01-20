@@ -24,6 +24,11 @@ const CourseManager = () => {
   const [matricText, setMatricText] = useState('');
   const [enrollError, setEnrollError] = useState('');
   const [enrollSuccess, setEnrollSuccess] = useState('');
+  const [enrolledByCourse, setEnrolledByCourse] = useState({});
+  const [expandedCourseIds, setExpandedCourseIds] = useState({});
+  const [enrollSearchQuery, setEnrollSearchQuery] = useState('');
+  const [enrollSuggestions, setEnrollSuggestions] = useState([]);
+  const [enrollSearchLoading, setEnrollSearchLoading] = useState(false);
 
   const loadCourses = async () => {
     try {
@@ -83,6 +88,8 @@ const CourseManager = () => {
     setEnrollError('');
     setEnrollSuccess('');
     setShowEnrollModal(true);
+    setEnrollSearchQuery('');
+    setEnrollSuggestions([]);
   };
 
   const submitEnrollSingle = async (e) => {
@@ -101,6 +108,70 @@ const CourseManager = () => {
     } catch (e) {
       setEnrollError(e.response?.data?.message || 'Failed to enroll student');
     }
+  };
+
+  const toggleEnrolled = async (course) => {
+    const isExpanded = !!expandedCourseIds[course._id];
+    const nextExpanded = { ...expandedCourseIds, [course._id]: !isExpanded };
+    setExpandedCourseIds(nextExpanded);
+    if (!isExpanded && !enrolledByCourse[course._id]) {
+      try {
+        const res = await axios.get(`/api/courses/${course._id}/enrollments`);
+        setEnrolledByCourse({ ...enrolledByCourse, [course._id]: res.data });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const removeEnrollment = async (courseId, studentId) => {
+    try {
+      await axios.delete(`/api/courses/${courseId}/enroll/${studentId}`);
+      const current = enrolledByCourse[courseId] || [];
+      const next = current.filter(e => e.studentId !== studentId);
+      setEnrolledByCourse({ ...enrolledByCourse, [courseId]: next });
+    } catch (e) {
+      alert(e.response?.data?.message || 'Failed to remove enrollment');
+    }
+  };
+
+  const handleSearchInput = (e) => {
+    const q = e.target.value;
+    setEnrollSearchQuery(q);
+  };
+
+  useEffect(() => {
+    let active = true;
+    const fn = async () => {
+      const q = enrollSearchQuery.trim();
+      if (!q || q.length < 2) {
+        setEnrollSuggestions([]);
+        return;
+      }
+      setEnrollSearchLoading(true);
+      try {
+        const res = await axios.get('/api/users/search', { params: { q } });
+        if (active) setEnrollSuggestions(res.data || []);
+      } catch (e) {
+        if (active) setEnrollSuggestions([]);
+      } finally {
+        if (active) setEnrollSearchLoading(false);
+      }
+    };
+    const t = setTimeout(fn, 300);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [enrollSearchQuery]);
+
+  const addSuggestionToMatric = (student) => {
+    const id = student.studentId || '';
+    if (!id) return;
+    const parts = matricText.split(/[,\s]+/).filter(Boolean);
+    if (parts.includes(id)) return;
+    const next = (matricText ? matricText + ' ' : '') + id;
+    setMatricText(next);
   };
 
   const handleComplete = async (courseId) => {
@@ -224,6 +295,28 @@ const CourseManager = () => {
                 </a>
                 <button onClick={() => handleComplete(c._id)} className="cm-danger" disabled={loading}>Mark Completed</button>
               </div>
+              <div className="cm-enrolled">
+                <button type="button" className="cm-secondary" onClick={() => toggleEnrolled(c)}>
+                  {expandedCourseIds[c._id] ? 'Hide Enrolled' : 'View Enrolled'}
+                </button>
+                {expandedCourseIds[c._id] && (
+                  <div className="cm-enrolled-list">
+                    {(enrolledByCourse[c._id] || []).length === 0 && (
+                      <div className="cm-empty">No enrolled students.</div>
+                    )}
+                    {(enrolledByCourse[c._id] || []).map(s => (
+                      <div key={s.id} className="cm-enrolled-item">
+                        <div className="cm-enrolled-info">
+                          <span className="cm-tag">{s.studentId}</span>
+                          <span className="cm-enrolled-name">{s.name}</span>
+                          <span className="cm-enrolled-email">{s.email}</span>
+                        </div>
+                        <button type="button" className="cm-danger" onClick={() => removeEnrollment(c._id, s.studentId)}>Remove</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         ))}
@@ -242,6 +335,30 @@ const CourseManager = () => {
             <form onSubmit={submitEnrollSingle} className="cm-modal-form">
               {enrollError && <div className="cm-modal-error">{enrollError}</div>}
               {enrollSuccess && <div className="cm-modal-success">{enrollSuccess}</div>}
+              <label className="cm-label">Search Students</label>
+              <input
+                className="cm-input"
+                placeholder="Search by matric, email, name"
+                value={enrollSearchQuery}
+                onChange={handleSearchInput}
+              />
+              {enrollSearchLoading && <div className="cm-modal-sub">Searching...</div>}
+              {!enrollSearchLoading && enrollSuggestions.length > 0 && (
+                <div className="cm-suggestions">
+                  {enrollSuggestions.map(s => (
+                    <button
+                      type="button"
+                      key={s._id}
+                      className="cm-suggestion"
+                      onClick={() => addSuggestionToMatric(s)}
+                    >
+                      <span className="cm-tag">{s.studentId}</span>
+                      <span className="cm-suggestion-name">{s.firstName} {s.lastName}</span>
+                      <span className="cm-suggestion-email">{s.email}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <label className="cm-label">Matric Numbers</label>
               <textarea
                 className="cm-textarea"
