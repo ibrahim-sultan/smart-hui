@@ -5,6 +5,7 @@ const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const Message = require('../models/Message');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 const router = express.Router();
 
@@ -25,6 +26,18 @@ router.post('/broadcast', auth, authorize('staff'), ensureLecturerForCourse, asy
       content,
       expiresAt
     });
+    try {
+      const enrollments = await Enrollment.find({ course: req.course._id }).select('student');
+      if (enrollments.length > 0) {
+        const notifications = enrollments.map(e => ({
+          title: `New message in ${req.course.code}`,
+          message: content.length > 200 ? content.slice(0, 200) + '…' : content,
+          type: 'info',
+          recipient: e.student
+        }));
+        await Notification.insertMany(notifications);
+      }
+    } catch (_) {}
     res.status(201).json(msg);
   } catch (e) {
     res.status(500).json({ message: 'Server error' });
@@ -48,6 +61,14 @@ router.post('/private', auth, authorize('staff'), ensureLecturerForCourse, async
       content,
       expiresAt
     });
+    try {
+      await Notification.create({
+        title: `Reply from ${req.course.code}`,
+        message: content.length > 200 ? content.slice(0, 200) + '…' : content,
+        type: 'success',
+        recipient: student._id
+      });
+    } catch (_) {}
     res.status(201).json(msg);
   } catch (e) {
     res.status(500).json({ message: 'Server error' });

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import axios from 'axios';
 import Header from './components/Header/Header';
 import Login from './components/Login/Login';
 import AdminLogin from './components/AdminLogin/AdminLogin';
@@ -31,18 +32,27 @@ function AppContent() {
   const [notifications, setNotifications] = useState([]);
   const { user } = useAuth();
 
-  // Load notifications from localStorage on mount
   useEffect(() => {
-    const savedNotifications = localStorage.getItem('notifications');
-    if (savedNotifications) {
-      setNotifications(JSON.parse(savedNotifications));
-    }
-  }, []);
-
-  // Save notifications to localStorage
-  useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-  }, [notifications]);
+    const loadNotifications = async () => {
+      if (!user) return;
+      try {
+        const res = await axios.get('/api/notifications');
+        const mapped = (res.data || []).map(n => ({
+          id: n._id,
+          userEmail: user.email,
+          type: 'message',
+          message: n.message,
+          status: 'pending',
+          timestamp: n.createdAt,
+          read: !!n.isRead
+        }));
+        setNotifications(mapped);
+      } catch (_) {
+        setNotifications([]);
+      }
+    };
+    loadNotifications();
+  }, [user]);
 
 
   const updateComplaintPriority = (id, priority) => {
@@ -99,18 +109,24 @@ function AppContent() {
     }
   };
 
-  const markNotificationAsRead = (notificationId) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === notificationId ? { ...notification, read: true } : notification
-      )
-    );
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      await axios.put(`/api/notifications/${notificationId}/read`);
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === notificationId ? { ...notification, read: true } : notification
+        )
+      );
+    } catch (_) {}
   };
 
-  const clearAllNotifications = (userEmail) => {
-    setNotifications(prev =>
-      prev.filter(notification => notification.userEmail !== userEmail || notification.read)
-    );
+  const clearAllNotifications = async () => {
+    try {
+      const res = await axios.get('/api/notifications');
+      const list = res.data || [];
+      await Promise.all(list.map(n => axios.delete(`/api/notifications/${n._id}`)));
+    } catch (_) {}
+    setNotifications([]);
   };
 
 

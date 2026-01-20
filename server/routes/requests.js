@@ -5,6 +5,7 @@ const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const Request = require('../models/Request');
 const categories = require('../utils/requestCategories');
+const Notification = require('../models/Notification');
 
 const router = express.Router();
 
@@ -48,6 +49,22 @@ router.patch('/:id/status', auth, authorize('staff'), async (req, res) => {
     doc.status = status;
     doc.updatedAt = Date.now();
     await doc.save();
+    try {
+      const statusLabel = {
+        responded: 'Responded',
+        deferred: 'Deferred',
+        approved_visit: 'Approved Visit',
+        closed: 'Closed'
+      }[status] || status;
+      const baseMsg = `Your request "${doc.category.replace(/_/g, ' ')}" is ${statusLabel.toLowerCase()}.`;
+      const extra = doc.autoResponse ? ` ${doc.autoResponse}` : '';
+      await Notification.create({
+        title: `Request ${statusLabel}`,
+        message: (baseMsg + extra).trim(),
+        type: status === 'closed' ? 'info' : status === 'approved_visit' ? 'success' : 'info',
+        recipient: doc.student
+      });
+    } catch (_) {}
     res.json(doc);
   } catch (e) {
     res.status(500).json({ message: 'Server error' });
