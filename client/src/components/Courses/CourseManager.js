@@ -17,12 +17,11 @@ const CourseManager = () => {
     startDate: '',
     endDate: ''
   });
-  const [enrollInput, setEnrollInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [enrollCourse, setEnrollCourse] = useState(null);
-  const [matricNumber, setMatricNumber] = useState('');
+  const [matricText, setMatricText] = useState('');
   const [enrollError, setEnrollError] = useState('');
   const [enrollSuccess, setEnrollSuccess] = useState('');
 
@@ -78,24 +77,9 @@ const CourseManager = () => {
     }
   };
 
-  const handleEnroll = async (courseId) => {
-    setLoading(true);
-    setMessage('');
-    try {
-      const matricList = enrollInput.split(/[,\s]+/).filter(Boolean);
-      await axios.post(`/api/courses/${courseId}/enroll`, { studentIds: matricList });
-      setMessage(`Enrolled ${matricList.length} students`);
-      setEnrollInput('');
-    } catch (e) {
-      alert(e.response?.data?.message || 'Failed to enroll students');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const openEnrollModal = (course) => {
     setEnrollCourse(course);
-    setMatricNumber('');
+    setMatricText('');
     setEnrollError('');
     setEnrollSuccess('');
     setShowEnrollModal(true);
@@ -105,14 +89,15 @@ const CourseManager = () => {
     e.preventDefault();
     setEnrollError('');
     setEnrollSuccess('');
-    if (!matricNumber.trim()) {
-      setEnrollError('Enter a student matric number');
+    if (!matricText.trim()) {
+      setEnrollError('Enter one or more matric numbers');
       return;
     }
     try {
-      await axios.post(`/api/courses/${enrollCourse._id}/enroll`, { studentIds: [matricNumber.trim()] });
-      setEnrollSuccess(`Enrolled ${matricNumber.trim()} successfully`);
-      setMatricNumber('');
+      const matricList = matricText.split(/[,\s]+/).filter(Boolean);
+      await axios.post(`/api/courses/${enrollCourse._id}/enroll`, { studentIds: matricList });
+      setEnrollSuccess(`Enrolled ${matricList.length} student(s) successfully`);
+      setMatricText('');
     } catch (e) {
       setEnrollError(e.response?.data?.message || 'Failed to enroll student');
     }
@@ -229,16 +214,8 @@ const CourseManager = () => {
               Start {new Date(c.startDate).toLocaleDateString()} | End {new Date(c.endDate).toLocaleDateString()}
             </div>
             <div className="cm-actions">
-              <textarea
-                className="cm-textarea"
-                placeholder="Enter matric numbers separated by comma or space"
-                value={enrollInput}
-                onChange={e => setEnrollInput(e.target.value)}
-                rows={3}
-              />
               <div className="cm-buttons">
-                <button onClick={() => handleEnroll(c._id)} className="cm-secondary" disabled={loading}>Enroll Students</button>
-                <button type="button" onClick={() => openEnrollModal(c)} className="cm-secondary">Enroll Student</button>
+                <button type="button" onClick={() => openEnrollModal(c)} className="cm-secondary">Enroll Students</button>
                 <a href={`/staff/messaging/${c._id}`} className="cm-link">
                   <button type="button" className="cm-secondary">Open Messaging</button>
                 </a>
@@ -265,12 +242,13 @@ const CourseManager = () => {
             <form onSubmit={submitEnrollSingle} className="cm-modal-form">
               {enrollError && <div className="cm-modal-error">{enrollError}</div>}
               {enrollSuccess && <div className="cm-modal-success">{enrollSuccess}</div>}
-              <label className="cm-label">Student Matric Number</label>
-              <input
-                className="cm-input"
-                placeholder="e.g., HUI/CSC/21/001"
-                value={matricNumber}
-                onChange={e => setMatricNumber(e.target.value)}
+              <label className="cm-label">Matric Numbers</label>
+              <textarea
+                className="cm-textarea"
+                placeholder="Enter one or more matric numbers (comma or space separated)"
+                value={matricText}
+                onChange={e => setMatricText(e.target.value)}
+                rows={3}
               />
               <div className="cm-modal-actions">
                 <button type="button" className="cm-secondary" onClick={() => setShowEnrollModal(false)}>Cancel</button>
