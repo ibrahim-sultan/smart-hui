@@ -75,7 +75,9 @@ router.post('/:courseId/enroll', auth, authorize('staff'), async (req, res) => {
     const students = await User.find({ studentId: { $in: studentIds }, role: 'student' });
     const ops = students.map(s => ({ updateOne: { filter: { course: course._id, student: s._id }, update: { course: course._id, student: s._id }, upsert: true } }));
     if (ops.length > 0) await Enrollment.bulkWrite(ops);
-    res.json({ enrolled: students.map(s => s.studentId) });
+    const foundIds = students.map(s => s.studentId);
+    const notFound = studentIds.filter(id => !foundIds.includes(id));
+    res.json({ enrolled: foundIds, notFound });
   } catch (e) {
     res.status(500).json({ message: 'Server error' });
   }

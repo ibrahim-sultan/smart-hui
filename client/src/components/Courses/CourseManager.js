@@ -29,6 +29,7 @@ const CourseManager = () => {
   const [enrollSearchQuery, setEnrollSearchQuery] = useState('');
   const [enrollSuggestions, setEnrollSuggestions] = useState([]);
   const [enrollSearchLoading, setEnrollSearchLoading] = useState(false);
+  const [csvError, setCsvError] = useState('');
 
   const loadCourses = async () => {
     try {
@@ -102,8 +103,11 @@ const CourseManager = () => {
     }
     try {
       const matricList = matricText.split(/[,\s]+/).filter(Boolean);
-      await axios.post(`/api/courses/${enrollCourse._id}/enroll`, { studentIds: matricList });
-      setEnrollSuccess(`Enrolled ${matricList.length} student(s) successfully`);
+      const res = await axios.post(`/api/courses/${enrollCourse._id}/enroll`, { studentIds: matricList });
+      const enrolledCount = (res.data?.enrolled || []).length;
+      const notFoundCount = (res.data?.notFound || []).length;
+      const msg = `Enrolled ${enrolledCount} student(s) successfully` + (notFoundCount > 0 ? ` — ${notFoundCount} not found` : '');
+      setEnrollSuccess(msg);
       setMatricText('');
     } catch (e) {
       setEnrollError(e.response?.data?.message || 'Failed to enroll student');
@@ -172,6 +176,28 @@ const CourseManager = () => {
     if (parts.includes(id)) return;
     const next = (matricText ? matricText + ' ' : '') + id;
     setMatricText(next);
+  };
+
+  const handleCsvFile = async (file) => {
+    setCsvError('');
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const tokens = text
+        .split(/\r?\n/)
+        .flatMap(line => line.split(/[,\s;]+/))
+        .map(t => t.trim())
+        .filter(Boolean);
+      if (tokens.length === 0) {
+        setCsvError('No matric numbers found in file');
+        return;
+      }
+      const existing = matricText.split(/[,\s]+/).filter(Boolean);
+      const merged = Array.from(new Set([...existing, ...tokens]));
+      setMatricText(merged.join(' '));
+    } catch (e) {
+      setCsvError('Failed to read file');
+    }
   };
 
   const handleComplete = async (courseId) => {
@@ -359,6 +385,14 @@ const CourseManager = () => {
                   ))}
                 </div>
               )}
+              <label className="cm-label">Bulk Upload (CSV/TXT)</label>
+              <input
+                className="cm-input"
+                type="file"
+                accept=".csv,.txt"
+                onChange={e => handleCsvFile(e.target.files?.[0])}
+              />
+              {csvError && <div className="cm-modal-error">{csvError}</div>}
               <label className="cm-label">Matric Numbers</label>
               <textarea
                 className="cm-textarea"
