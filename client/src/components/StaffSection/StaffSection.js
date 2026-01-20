@@ -165,9 +165,31 @@ const StaffSection = () => {
       animate="visible"
     >
       <div className="section-container">
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
-          <a href="/staff/courses"><button type="button">Manage Courses</button></a>
-          <a href="/staff">Report Issue</a>
+        <div className="quick-actions">
+          <motion.a
+            href="/staff/courses"
+            className="action-button manage"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span className="action-icon">📚</span>
+            <div className="action-text">
+              <div className="action-title">Manage Courses</div>
+              <div className="action-subtitle">Create, edit, and organize</div>
+            </div>
+          </motion.a>
+          <motion.a
+            href="/staff"
+            className="action-button report"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span className="action-icon">🛠️</span>
+            <div className="action-text">
+              <div className="action-title">Report Issues</div>
+              <div className="action-subtitle">Technical or administrative</div>
+            </div>
+          </motion.a>
         </div>
         <motion.div className="section-header" variants={itemVariants}>
           <div className="header-icon">👨‍🏫</div>
