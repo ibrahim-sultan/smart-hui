@@ -6,6 +6,7 @@ const RequestQueue = () => {
   const { courseId } = useParams();
   const [items, setItems] = useState([]);
   const [statusMsg, setStatusMsg] = useState('');
+  const [replies, setReplies] = useState({});
 
   const loadQueue = async () => {
     try {
@@ -32,6 +33,23 @@ const RequestQueue = () => {
     }
   };
 
+  const sendResponse = async (r) => {
+    setStatusMsg('');
+    const text = (replies[r._id] || '').trim();
+    if (!text) {
+      alert('Enter a response message');
+      return;
+    }
+    try {
+      await axios.post('/api/messaging/private', { courseId, studentId: r.student?.studentId, content: text, category: r.category });
+      await updateStatus(r._id, 'responded');
+      setReplies(prev => ({ ...prev, [r._id]: '' }));
+      setStatusMsg('Response sent');
+    } catch (e) {
+      alert(e.response?.data?.message || 'Failed to send response');
+    }
+  };
+
   return (
     <div style={{ padding: 16 }}>
       <h2>Request Queue</h2>
@@ -47,6 +65,17 @@ const RequestQueue = () => {
               Auto-response: {r.autoResponse}
             </div>
           )}
+          <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+            <label>Custom Response</label>
+            <textarea
+              rows={3}
+              value={replies[r._id] || ''}
+              onChange={e => setReplies(prev => ({ ...prev, [r._id]: e.target.value }))}
+              placeholder="Type a personalized response to this student"
+              style={{ width: '100%' }}
+            />
+            <button onClick={() => sendResponse(r)}>Send Response</button>
+          </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button onClick={() => updateStatus(r._id, 'responded')}>Responded</button>
             <button onClick={() => updateStatus(r._id, 'deferred')}>Defer</button>
