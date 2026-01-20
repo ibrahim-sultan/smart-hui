@@ -20,6 +20,11 @@ const CourseManager = () => {
   const [enrollInput, setEnrollInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [enrollCourse, setEnrollCourse] = useState(null);
+  const [matricNumber, setMatricNumber] = useState('');
+  const [enrollError, setEnrollError] = useState('');
+  const [enrollSuccess, setEnrollSuccess] = useState('');
 
   const loadCourses = async () => {
     try {
@@ -85,6 +90,31 @@ const CourseManager = () => {
       alert(e.response?.data?.message || 'Failed to enroll students');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openEnrollModal = (course) => {
+    setEnrollCourse(course);
+    setMatricNumber('');
+    setEnrollError('');
+    setEnrollSuccess('');
+    setShowEnrollModal(true);
+  };
+
+  const submitEnrollSingle = async (e) => {
+    e.preventDefault();
+    setEnrollError('');
+    setEnrollSuccess('');
+    if (!matricNumber.trim()) {
+      setEnrollError('Enter a student matric number');
+      return;
+    }
+    try {
+      await axios.post(`/api/courses/${enrollCourse._id}/enroll`, { studentIds: [matricNumber.trim()] });
+      setEnrollSuccess(`Enrolled ${matricNumber.trim()} successfully`);
+      setMatricNumber('');
+    } catch (e) {
+      setEnrollError(e.response?.data?.message || 'Failed to enroll student');
     }
   };
 
@@ -208,6 +238,7 @@ const CourseManager = () => {
               />
               <div className="cm-buttons">
                 <button onClick={() => handleEnroll(c._id)} className="cm-secondary" disabled={loading}>Enroll Students</button>
+                <button type="button" onClick={() => openEnrollModal(c)} className="cm-secondary">Enroll Student</button>
                 <a href={`/staff/messaging/${c._id}`} className="cm-link">
                   <button type="button" className="cm-secondary">Open Messaging</button>
                 </a>
@@ -220,6 +251,35 @@ const CourseManager = () => {
           </motion.div>
         ))}
       </div>
+      {showEnrollModal && enrollCourse && (
+        <motion.div className="cm-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.div className="cm-modal" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+            <div className="cm-modal-header">
+              <div className="cm-modal-icon">📝</div>
+              <div>
+                <div className="cm-modal-title">Enroll Student</div>
+                <div className="cm-modal-sub">Course: {enrollCourse.code} — {enrollCourse.title}</div>
+              </div>
+              <button className="cm-modal-close" onClick={() => setShowEnrollModal(false)}>✕</button>
+            </div>
+            <form onSubmit={submitEnrollSingle} className="cm-modal-form">
+              {enrollError && <div className="cm-modal-error">{enrollError}</div>}
+              {enrollSuccess && <div className="cm-modal-success">{enrollSuccess}</div>}
+              <label className="cm-label">Student Matric Number</label>
+              <input
+                className="cm-input"
+                placeholder="e.g., HUI/CSC/21/001"
+                value={matricNumber}
+                onChange={e => setMatricNumber(e.target.value)}
+              />
+              <div className="cm-modal-actions">
+                <button type="button" className="cm-secondary" onClick={() => setShowEnrollModal(false)}>Cancel</button>
+                <button type="submit" className="cm-primary">Enroll</button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };
