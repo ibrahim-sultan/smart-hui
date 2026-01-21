@@ -94,7 +94,6 @@ const Login = () => {
         </form>
 
         <div className="login-links">
-          <p><Link to="/forgot-password">Forgot Password?</Link></p>
           <p><Link to="/admin/login">Admin Login →</Link></p>
         </div>
       </div>

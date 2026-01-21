@@ -120,7 +120,6 @@ const AdminLogin = () => {
         </form>
 
         <div className="admin-login-links">
-          <p><Link to="/admin/forgot-password">Forgot Password?</Link></p>
           <p><Link to="/login">← Back to Student/Staff Login</Link></p>
         </div>
       </div>
