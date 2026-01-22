@@ -610,6 +610,66 @@
   cursor: not-allowed;
 }
 
+.reset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.75rem;
+  border-radius: 999px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+  box-shadow: 0 8px 20px rgba(76, 81, 191, 0.25);
+  background: linear-gradient(135deg, #4c51bf, #667eea);
+  color: #fff;
+}
+
+.reset-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(76, 81, 191, 0.35);
+}
+
+.reset-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(76, 81, 191, 0.25);
+}
+
+.reset-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.reset-default-btn {
+  background: linear-gradient(135deg, #dd6b20, #f6ad55);
+  box-shadow: 0 8px 20px rgba(221, 107, 32, 0.25);
+}
+
+.reset-default-btn:hover {
+  box-shadow: 0 12px 30px rgba(221, 107, 32, 0.35);
+}
+
+.create-user-btn {
+  background: linear-gradient(135deg, #38a169, #68d391);
+  box-shadow: 0 8px 20px rgba(56, 161, 105, 0.25);
+}
+
+.create-user-btn:hover {
+  box-shadow: 0 12px 30px rgba(56, 161, 105, 0.35);
+}
+
+.bulk-users-btn {
+  background: linear-gradient(135deg, #3182ce, #63b3ed);
+  box-shadow: 0 8px 20px rgba(49, 130, 206, 0.25);
+}
+
+.bulk-users-btn:hover {
+  box-shadow: 0 12px 30px rgba(49, 130, 206, 0.35);
+}
+
 @media (max-width: 768px) {
   .management-header {
     flex-direction: column;

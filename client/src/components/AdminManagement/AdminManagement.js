@@ -554,7 +554,7 @@ const AdminManagement = () => {
             </div>
           </div>
           <p className="form-note">Enter at least one of email or student ID.</p>
-          <button type="submit" disabled={resetLoading} className="reset-btn">
+          <button type="submit" disabled={resetLoading} className="reset-btn reset-default-btn">
             {resetLoading ? 'Resetting...' : 'Reset Password to Default'}
           </button>
         </form>
@@ -652,7 +652,7 @@ const AdminManagement = () => {
               </div>
             </div>
           )}
-          <button type="submit" disabled={userLoading} className="reset-btn">
+          <button type="submit" disabled={userLoading} className="reset-btn create-user-btn">
             {userLoading ? 'Creating...' : 'Create User'}
           </button>
         </form>
@@ -706,7 +706,7 @@ const AdminManagement = () => {
               required
             />
           </div>
-          <button type="submit" disabled={bulkLoading} className="reset-btn">
+          <button type="submit" disabled={bulkLoading} className="reset-btn bulk-users-btn">
             {bulkLoading ? 'Processing...' : 'Process Bulk Users'}
           </button>
         </form>
