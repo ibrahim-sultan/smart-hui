@@ -73,6 +73,21 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
+  
+  const loginWithIdentifier = async (identifier, password) => {
+    try {
+      const response = await axios.post('/api/auth/login', { identifier, password });
+      const { token, user } = response.data;
+      
+      localStorage.setItem('token', token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser(user);
+      
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  };
 
   const logout = () => {
     setUser(null);
@@ -96,6 +111,7 @@ export const AuthProvider = ({ children }) => {
     user,
     register,
     login,
+    loginWithIdentifier,
     logout,
     isAdmin,
     isStaff,

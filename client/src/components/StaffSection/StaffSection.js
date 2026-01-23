@@ -8,15 +8,9 @@ import './StaffSection.css';
 const StaffSection = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    staffId: '',
-    email: '',
-    department: '',
     category: '',
     priority: 'medium',
-    description: '',
-    contactNumber: ''
+    description: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -109,7 +103,7 @@ const StaffSection = () => {
     try {
       const serverCategory = mapCategoryToServer(formData.category);
       const payload = {
-        title: `${serverCategory.toUpperCase()} issue - ${formData.staffId || 'staff'}`,
+        title: `${serverCategory.toUpperCase()} issue - ${user?.staffId || 'staff'}`,
         description: formData.description,
         category: serverCategory,
         priority: formData.priority
@@ -122,14 +116,9 @@ const StaffSection = () => {
       fetchUserComplaints();
 
       setFormData({
-        name: '',
-        staffId: '',
-        email: '',
-        department: '',
         category: '',
         priority: 'medium',
-        description: '',
-        contactNumber: ''
+        description: ''
       });
     } catch (err) {
       console.error('Failed to submit staff complaint:', err);
@@ -208,80 +197,18 @@ const StaffSection = () => {
           </motion.div>
         )}
 
+        {/* Staff Details Card */}
+        <motion.div className="details-card" variants={itemVariants}>
+          <h3>Your Details</h3>
+          <p>Name: {user?.firstName} {user?.lastName}</p>
+          <p>Email: {user?.email}</p>
+          <p>Department: {user?.department}</p>
+          <p>Staff ID: {user?.staffId || 'N/A'}</p>
+        </motion.div>
+
         <motion.div className="form-container" variants={itemVariants}>
           <form onSubmit={handleSubmit} className="complaint-form">
-            <div className="form-row">
-              <motion.div className="form-group" variants={itemVariants}>
-                <label className="form-label">Full Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  required
-                  placeholder="Enter your full name"
-                />
-              </motion.div>
-
-              <motion.div className="form-group" variants={itemVariants}>
-                <label className="form-label">Staff ID *</label>
-                <input
-                  type="text"
-                  name="staffId"
-                  value={formData.staffId}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  required
-                  placeholder="Enter your staff ID"
-                />
-              </motion.div>
-            </div>
-
-            <div className="form-row">
-              <motion.div className="form-group" variants={itemVariants}>
-                <label className="form-label">Email Address *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  required
-                  placeholder="Enter your email address"
-                />
-              </motion.div>
-
-              <motion.div className="form-group" variants={itemVariants}>
-                <label className="form-label">Contact Number</label>
-                <input
-                  type="tel"
-                  name="contactNumber"
-                  value={formData.contactNumber}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  placeholder="Enter your phone number"
-                />
-              </motion.div>
-            </div>
-
-            <motion.div className="form-group" variants={itemVariants}>
-              <label className="form-label">Department/Unit *</label>
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleInputChange}
-                className="form-select"
-                required
-              >
-                <option value="">Select your department</option>
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-            </motion.div>
+            {/* Simplified form: category, priority, description */}
 
             <motion.div className="form-group" variants={itemVariants}>
               <label className="form-label">Issue Category *</label>

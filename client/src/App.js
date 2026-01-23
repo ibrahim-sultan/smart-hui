@@ -24,6 +24,7 @@ import AdminForgotPassword from './components/AdminForgotPassword/AdminForgotPas
 import AdminResetPassword from './components/AdminResetPassword/AdminResetPassword';
 import NotificationSystem from './components/NotificationSystem/NotificationSystem';
 import UserPasswordChange from './components/UserPasswordChange/UserPasswordChange';
+import UserResetPassword from './components/UserResetPassword/UserResetPassword';
 import './App.css';
 
 // Main App component with routing
@@ -195,6 +196,18 @@ function AppContent() {
                 <UserPasswordChange />
               </motion.div>
             </ProtectedRoute>
+          } />
+          
+          {/* User Reset Password Route - via email token */}
+          <Route path="/reset-password/:token" element={
+            <motion.div
+              initial={{ opacity: 0, x: -100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ duration: 0.3 }}
+            >
+              <UserResetPassword />
+            </motion.div>
           } />
           
           {/* Admin Dashboard Route - For regular admins and sub-admins to view complaints */}

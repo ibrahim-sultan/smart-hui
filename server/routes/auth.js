@@ -17,7 +17,6 @@ router.post('/register', async (req, res) => {
 // @desc    Authenticate user & get token
 // @access  Public
 router.post('/login', [
-  body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').exists().withMessage('Password is required')
 ], async (req, res) => {
   try {
@@ -26,9 +25,23 @@ router.post('/login', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { email, identifier, password } = req.body;
 
-    const user = await User.findOne({ email });
+    if (!email && !identifier) {
+      return res.status(400).json({ message: 'Provide email or matric/staff ID' });
+    }
+
+    let user;
+    if (email) {
+      user = await User.findOne({ email });
+    } else {
+      user = await User.findOne({
+        $or: [
+          { studentId: identifier },
+          { staffId: identifier }
+        ]
+      });
+    }
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -53,6 +66,7 @@ router.post('/login', [
         email: user.email,
         role: user.role,
         studentId: user.studentId,
+        staffId: user.staffId,
         department: user.department,
         year: user.year,
         isFirstLogin: user.isFirstLogin
@@ -63,6 +77,8 @@ router.post('/login', [
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Removed passwordless login route to enforce identifier+password login
 
 // @route   GET /api/auth/me
 // @desc    Get current user

@@ -372,6 +372,7 @@ const AdminManagement = () => {
             email: u.email || '',
             department: u.department || '',
             studentId: u.studentId ? u.studentId : undefined,
+            staffId: u.staffId ? u.staffId : undefined,
             year: u.year ? u.year : null
           }));
           setBulkLoading(true);
@@ -393,10 +394,22 @@ const AdminManagement = () => {
     }
   };
 
+  const handleDeleteUser = async (userId) => {
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      await axios.delete(`/api/admin/users/${userId}`, {
+        headers: { Authorization: `Bearer ${adminToken}` }
+      });
+      setBulkResults(prev => prev.filter(r => r.id !== userId));
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete user');
+    }
+  };
+
   const handleTemplateDownload = () => {
-    const headers = ['role','firstName','lastName','email','department','studentId','year'].join(',');
+    const headers = ['role','firstName','lastName','email','department','studentId','staffId','year'].join(',');
     const row1 = ['student','Ada','Lovelace','ada@example.com','Computer Science','HUI/CSC/21/001','1st'].join(',');
-    const row2 = ['staff','Grace','Hopper','grace@example.com','ICT','',''].join(',');
+    const row2 = ['staff','Grace','Hopper','grace@example.com','ICT','','STAFF/ICT/001',''].join(',');
     const csv = `${headers}\n${row1}\n${row2}\n`;
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -633,6 +646,17 @@ const AdminManagement = () => {
                 />
               </div>
             )}
+            {userForm.role === 'staff' && (
+              <div className="form-group">
+                <label>Staff ID (optional)</label>
+                <input
+                  type="text"
+                  value={userForm.staffId || ''}
+                  onChange={(e) => setUserForm({ ...userForm, staffId: e.target.value })}
+                  placeholder="e.g., STAFF/ICT/001"
+                />
+              </div>
+            )}
           </div>
           {userForm.role === 'student' && (
             <div className="form-row">
@@ -662,7 +686,7 @@ const AdminManagement = () => {
       <div className="user-password-reset">
         <h3>Bulk Onboard Students/Staff</h3>
         <p className="section-help">
-          Paste a JSON array of users with keys: role (student|staff), firstName, lastName, email, department, optional studentId and year for students.
+          Paste a JSON array of users with keys: role (student|staff), firstName, lastName, email, department, optional studentId (students), optional staffId (staff), and year for students.
         </p>
         <div className="form-group">
           <button type="button" className="reset-btn" onClick={handleTemplateDownload}>
@@ -717,10 +741,26 @@ const AdminManagement = () => {
               {bulkResults.map((r, idx) => (
                 <div key={idx} className="admin-card">
                   <div className="admin-info">
-                    <h4>{r.email || 'N/A'}</h4>
+                    <h4>{(r.firstName && r.lastName) ? `${r.firstName} ${r.lastName}` : r.email || 'N/A'}</h4>
+                    <p>{r.email}</p>
+                    <p>Department: {r.department || 'N/A'}</p>
+                    <p>
+                      {r.role === 'student' ? `Matric: ${r.studentId || 'N/A'}` : r.role === 'staff' ? `Staff ID: ${r.staffId || 'N/A'}` : ''}
+                    </p>
                     <p>Status: {r.status}</p>
                     {r.reason && <p>Reason: {r.reason}</p>}
                   </div>
+                  {r.id && (
+                    <div className="admin-actions">
+                      <button 
+                        className="delete-btn" 
+                        onClick={() => handleDeleteUser(r.id)}
+                        title="Delete user"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

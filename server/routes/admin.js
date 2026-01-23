@@ -764,19 +764,24 @@ router.post('/users/create', [
   body('lastName').notEmpty(),
   body('email').isEmail(),
   body('department').notEmpty(),
-  body('studentId').optional().isString()
+  body('studentId').optional().isString(),
+  body('staffId').optional().isString()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { role, firstName, lastName, email, department, studentId, year } = req.body;
+    const { role, firstName, lastName, email, department, studentId, staffId, year } = req.body;
     const existingEmail = await User.findOne({ email: email.toLowerCase() });
     if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
     if (role === 'student' && studentId) {
       const existingStudent = await User.findOne({ studentId });
       if (existingStudent) return res.status(400).json({ message: 'Student ID already exists' });
+    }
+    if (role === 'staff' && staffId) {
+      const existingStaff = await User.findOne({ staffId });
+      if (existingStaff) return res.status(400).json({ message: 'Staff ID already exists' });
     }
     const user = new User({
       firstName,
@@ -785,6 +790,7 @@ router.post('/users/create', [
       password: DEFAULT_USER_PASSWORD,
       role,
       studentId: role === 'student' ? (studentId || undefined) : undefined,
+      staffId: role === 'staff' ? (staffId || undefined) : undefined,
       department,
       year: year || null,
       isFirstLogin: true
@@ -792,7 +798,16 @@ router.post('/users/create', [
     await user.save();
     res.status(201).json({
       message: 'User created',
-      user: { id: user._id, email: user.email, role: user.role, studentId: user.studentId || null },
+      user: { 
+        id: user._id, 
+        email: user.email, 
+        role: user.role, 
+        studentId: user.studentId || null,
+        staffId: user.staffId || null,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        department: user.department
+      },
       defaultPassword: DEFAULT_USER_PASSWORD
     });
   } catch (error) {
@@ -826,6 +841,10 @@ router.post('/users/bulk', [
           const sidExists = await User.findOne({ studentId: u.studentId });
           if (sidExists) { results.push({ email, status: 'skipped', reason: 'Student ID exists' }); continue; }
         }
+        if (role === 'staff' && u.staffId) {
+          const stidExists = await User.findOne({ staffId: u.staffId });
+          if (stidExists) { results.push({ email, status: 'skipped', reason: 'Staff ID exists' }); continue; }
+        }
         const user = new User({
           firstName: u.firstName,
           lastName: u.lastName,
@@ -833,17 +852,55 @@ router.post('/users/bulk', [
           password: DEFAULT_USER_PASSWORD,
           role,
           studentId: role === 'student' ? (u.studentId || undefined) : undefined,
+          staffId: role === 'staff' ? (u.staffId || undefined) : undefined,
           department: u.department,
           year: u.year || null,
           isFirstLogin: true
         });
         await user.save();
-        results.push({ email, status: 'created' });
+        results.push({ 
+          id: user._id,
+          email, 
+          status: 'created',
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          department: user.department,
+          studentId: user.studentId || null,
+          staffId: user.staffId || null
+        });
       } catch (e) {
-        results.push({ email: u.email, status: 'error', reason: e.message });
+        results.push({ 
+          email: u.email, 
+          status: 'error', 
+          reason: e.message,
+          role: u.role,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          department: u.department,
+          studentId: u.studentId || null,
+          staffId: u.staffId || null
+        });
       }
     }
     res.json({ results, defaultPassword: DEFAULT_USER_PASSWORD });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete a user (student/staff) by ID - super admin only
+router.delete('/users/:id', [
+  adminAuth,
+  adminAuthorize('super_admin')
+], async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'User deleted successfully', id: req.params.id });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

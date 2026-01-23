@@ -9,15 +9,9 @@ import './StudentSection.css';
 const StudentSection = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    surname: '',
-    otherName: '',
-    middleName: '',
-    studentId: '',
-    email: '',
     category: '',
     priority: 'medium',
     description: '',
-    matricNumber: '',
     preferredPassword: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,11 +94,11 @@ const StudentSection = () => {
     try {
       const serverCategory = mapCategoryToServer(formData.category);
       const payload = {
-        title: `${serverCategory.toUpperCase()} issue - ${formData.studentId || formData.matricNumber || 'student'}`,
+        title: `${serverCategory.toUpperCase()} issue - ${user?.studentId || 'student'}`,
         description: formData.description,
         category: serverCategory,
         priority: formData.priority,
-        matricNumber: formData.matricNumber || null,
+        matricNumber: user?.studentId || null,
         preferredPassword: formData.preferredPassword || null
       };
 
@@ -115,13 +109,9 @@ const StudentSection = () => {
       fetchUserComplaints();
 
       setFormData({
-        name: '',
-        studentId: '',
-        email: '',
         category: '',
         priority: 'medium',
         description: '',
-        matricNumber: '',
         preferredPassword: ''
       });
     } catch (err) {
@@ -201,50 +191,18 @@ const StudentSection = () => {
           </motion.div>
         )}
 
+        {/* Student Details Card */}
+        <motion.div className="details-card" variants={itemVariants}>
+          <h3>Your Details</h3>
+          <p>Name: {user?.firstName} {user?.lastName}</p>
+          <p>Email: {user?.email}</p>
+          <p>Department: {user?.department}</p>
+          <p>Matric Number: {user?.studentId || 'N/A'}</p>
+        </motion.div>
+
         <motion.div className="form-container" variants={itemVariants}>
           <form onSubmit={handleSubmit} className="complaint-form">
-            <div className="form-row">
-              <motion.div className="form-group" variants={itemVariants}>
-                <label className="form-label">Full Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  required
-                  placeholder="Enter your full name"
-                />
-              </motion.div>
-
-              <motion.div className="form-group" variants={itemVariants}>
-                <label className="form-label">Student ID *</label>
-                <input
-                  type="text"
-                  name="studentId"
-                  value={formData.studentId}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  required
-                  placeholder="Enter your student ID"
-                />
-              </motion.div>
-            </div>
-
-            <div className="form-row">
-              <motion.div className="form-group" variants={itemVariants}>
-                <label className="form-label">Email Address *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  required
-                  placeholder="Enter your email address"
-                />
-              </motion.div>
-            </div>
+            {/* Simplified form: category, priority, description */}
 
             <motion.div className="form-group" variants={itemVariants}>
               <label className="form-label">Complaint Category *</label>
@@ -414,11 +372,11 @@ const StudentSection = () => {
         onSubmit={(data) => {
           // Create a proper complaint from InternetPopup data
           const payload = {
-            title: `NETWORK issue - ${formData.studentId || data.matricNumber || 'student'}`,
-            description: `Internet/Network access request - Matric: ${data.matricNumber}, Preferred Password: ${data.preferredPassword}`,
+            title: `NETWORK issue - ${user?.studentId || data.matricNumber || 'student'}`,
+            description: `Internet/Network access request - Matric: ${user?.studentId || data.matricNumber}, Preferred Password: ${data.preferredPassword}`,
             category: 'network',
             priority: 'high',
-            matricNumber: data.matricNumber,
+            matricNumber: user?.studentId || data.matricNumber,
             preferredPassword: data.preferredPassword
           };
           axios.post('/api/complaints', payload)

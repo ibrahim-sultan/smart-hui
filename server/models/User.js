@@ -35,6 +35,12 @@ const userSchema = new mongoose.Schema({
     sparse: true,
     default: undefined
   },
+  staffId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    default: undefined
+  },
   department: {
     type: String,
     trim: true
@@ -77,6 +83,9 @@ userSchema.pre('save', function(next) {
   }
   if (this.studentId === '' || this.studentId === null) {
     this.studentId = undefined;
+  }
+  if (this.staffId === '' || this.staffId === null) {
+    this.staffId = undefined;
   }
   next();
 });
