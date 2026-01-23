@@ -44,6 +44,7 @@ const AdminManagement = () => {
     email: '',
     department: '',
     studentId: '',
+    staffId: '',
     year: ''
   });
   const [userLoading, setUserLoading] = useState(false);
@@ -207,6 +208,7 @@ const AdminManagement = () => {
         email: userForm.email.trim(),
         department: userForm.department.trim(),
         studentId: userForm.role === 'student' ? (userForm.studentId.trim() || undefined) : undefined,
+        staffId: userForm.role === 'staff' ? (userForm.staffId.trim() || undefined) : undefined,
         year: userForm.role === 'student' ? (userForm.year || null) : null
       };
 
@@ -224,6 +226,7 @@ const AdminManagement = () => {
         email: '',
         department: '',
         studentId: '',
+        staffId: '',
         year: ''
       });
     } catch (error) {
