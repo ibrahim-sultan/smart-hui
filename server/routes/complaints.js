@@ -95,7 +95,7 @@ router.get('/:id', auth, async (req, res) => {
 // @access  Private
 router.post('/', bothAuth, [
   body('title').notEmpty().withMessage('Title is required'),
-  body('description').notEmpty().withMessage('Description is required'),
+  body('description').notEmpty().withMessage('Description is required').isLength({ max: 200 }).withMessage('Description must be 200 characters or less'),
   body('category').isIn(['academic', 'administrative', 'infrastructure', 'financial', 'network', 'password', 'additional_credit', 'other']).withMessage('Invalid category'),
   body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Invalid priority')
 ], async (req, res) => {

@@ -182,7 +182,7 @@ const StaffSection = () => {
         </div>
         <motion.div className="section-header" variants={itemVariants}>
           <div className="header-icon">👨‍🏫</div>
-          <h2>Staff Issue Reporting Portal</h2>
+          <h2>Welcome, {user?.firstName} {user?.lastName}</h2>
           <p>Report technical and administrative issues for prompt resolution</p>
         </motion.div>
 
@@ -203,7 +203,7 @@ const StaffSection = () => {
           <p>Name: {user?.firstName} {user?.lastName}</p>
           <p>Email: {user?.email}</p>
           <p>Department: {user?.department}</p>
-          <p>Staff ID: {user?.staffId || 'N/A'}</p>
+          <p>User ID: {user?.studentId || user?.staffId || 'N/A'}</p>
         </motion.div>
 
         <motion.div className="form-container" variants={itemVariants}>
@@ -258,6 +258,7 @@ const StaffSection = () => {
                 required
                 placeholder="Please provide detailed information about the issue, including steps to reproduce if applicable..."
                 rows="6"
+                maxLength={200}
               />
             </motion.div>
 

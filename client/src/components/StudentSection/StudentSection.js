@@ -176,7 +176,7 @@ const StudentSection = () => {
         </div>
         <motion.div className="section-header" variants={itemVariants}>
           <div className="header-icon">🎓</div>
-          <h2>Student Complaint Portal</h2>
+          <h2>Welcome, {user?.firstName} {user?.lastName}</h2>
           <p>Submit your complaints and issues for quick resolution</p>
         </motion.div>
 
@@ -197,7 +197,7 @@ const StudentSection = () => {
           <p>Name: {user?.firstName} {user?.lastName}</p>
           <p>Email: {user?.email}</p>
           <p>Department: {user?.department}</p>
-          <p>Matric Number: {user?.studentId || 'N/A'}</p>
+          <p>User ID: {user?.studentId || user?.staffId || 'N/A'}</p>
         </motion.div>
 
         <motion.div className="form-container" variants={itemVariants}>
@@ -252,6 +252,7 @@ const StudentSection = () => {
                 required
                 placeholder="Please provide detailed information about your complaint..."
                 rows="6"
+                maxLength={200}
               />
             </motion.div>
 

@@ -169,7 +169,7 @@ function AppContent() {
           {/* Registration Route removed: accounts are managed by admins; self-registration disabled */}
           
           {/* Admin Login Route */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/login" element={<Login />} />
           
           {/* Admin Forgot Password Route - Public */}
           <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />

@@ -43,9 +43,9 @@ const AdminManagement = () => {
     lastName: '',
     email: '',
     department: '',
-    studentId: '',
-    staffId: '',
-    year: ''
+    userId: '',
+    session: '',
+    level: ''
   });
   const [userLoading, setUserLoading] = useState(false);
   const [userMessage, setUserMessage] = useState('');
@@ -207,9 +207,9 @@ const AdminManagement = () => {
         lastName: userForm.lastName.trim(),
         email: userForm.email.trim(),
         department: userForm.department.trim(),
-        studentId: userForm.role === 'student' ? (userForm.studentId.trim() || undefined) : undefined,
-        staffId: userForm.role === 'staff' ? (userForm.staffId.trim() || undefined) : undefined,
-        year: userForm.role === 'student' ? (userForm.year || null) : null
+        userId: userForm.userId.trim() || undefined,
+        session: userForm.role === 'student' ? (userForm.session.trim() || null) : null,
+        level: userForm.role === 'student' ? (userForm.level.trim() || null) : null
       };
 
       const response = await axios.post('/api/admin/users/create', payload, {
@@ -225,9 +225,9 @@ const AdminManagement = () => {
         lastName: '',
         email: '',
         department: '',
-        studentId: '',
-        staffId: '',
-        year: ''
+        userId: '',
+        session: '',
+        level: ''
       });
     } catch (error) {
       setUserError(error.response?.data?.message || 'Failed to create user');
@@ -638,43 +638,39 @@ const AdminManagement = () => {
                 placeholder="name@example.com"
               />
             </div>
-            {userForm.role === 'student' && (
-              <div className="form-group">
-                <label>Student ID (optional)</label>
-                <input
-                  type="text"
-                  value={userForm.studentId}
-                  onChange={(e) => setUserForm({ ...userForm, studentId: e.target.value })}
-                  placeholder="e.g., HUI/CSC/21/001"
-                />
-              </div>
-            )}
-            {userForm.role === 'staff' && (
-              <div className="form-group">
-                <label>Staff ID (optional)</label>
-                <input
-                  type="text"
-                  value={userForm.staffId || ''}
-                  onChange={(e) => setUserForm({ ...userForm, staffId: e.target.value })}
-                  placeholder="e.g., STAFF/ICT/001"
-                />
-              </div>
-            )}
+            <div className="form-group">
+              <label>User ID</label>
+              <input
+                type="text"
+                value={userForm.userId}
+                onChange={(e) => setUserForm({ ...userForm, userId: e.target.value })}
+                placeholder={userForm.role === 'student' ? 'e.g., HUI/CSC/21/001' : 'e.g., STAFF/ICT/001'}
+              />
+            </div>
           </div>
           {userForm.role === 'student' && (
             <div className="form-row">
               <div className="form-group">
-                <label>Year (optional)</label>
+                <label>Session</label>
+                <input
+                  type="text"
+                  value={userForm.session}
+                  onChange={(e) => setUserForm({ ...userForm, session: e.target.value })}
+                  placeholder="e.g., 2025/2026"
+                />
+              </div>
+              <div className="form-group">
+                <label>Level</label>
                 <select
-                  value={userForm.year}
-                  onChange={(e) => setUserForm({ ...userForm, year: e.target.value })}
+                  value={userForm.level}
+                  onChange={(e) => setUserForm({ ...userForm, level: e.target.value })}
                 >
                   <option value="">Not set</option>
-                  <option value="1st">1st</option>
-                  <option value="2nd">2nd</option>
-                  <option value="3rd">3rd</option>
-                  <option value="4th">4th</option>
-                  <option value="5th">5th</option>
+                  <option value="100level">100level</option>
+                  <option value="200level">200level</option>
+                  <option value="300level">300level</option>
+                  <option value="400level">400level</option>
+                  <option value="500level">500level</option>
                 </select>
               </div>
             </div>
@@ -688,8 +684,8 @@ const AdminManagement = () => {
       {/* Bulk Onboarding Section */}
       <div className="user-password-reset">
         <h3>Bulk Onboard Students/Staff</h3>
-        <p className="section-help">
-          Paste a JSON array of users with keys: role (student|staff), firstName, lastName, email, department, optional studentId (students), optional staffId (staff), and year for students.
+          <p className="section-help">
+          Paste a JSON array of users with keys: role (student|staff), firstName, lastName, email, department, userId, session (student), level (student).
         </p>
         <div className="form-group">
           <button type="button" className="reset-btn" onClick={handleTemplateDownload}>
@@ -729,7 +725,7 @@ const AdminManagement = () => {
               rows={8}
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
-              placeholder='[{"role":"student","firstName":"A","lastName":"B","email":"a@example.com","department":"Computer Science","studentId":"HUI/CSC/21/001","year":"1st"},{"role":"staff","firstName":"C","lastName":"D","email":"c@example.com","department":"ICT"}]'
+              placeholder='[{"role":"student","firstName":"A","lastName":"B","email":"a@example.com","department":"Computer Science","userId":"HUI/CSC/21/001","session":"2025/2026","level":"100level"},{"role":"staff","firstName":"C","lastName":"D","email":"c@example.com","department":"ICT","userId":"STAFF/ICT/001"}]'
               required
             />
           </div>

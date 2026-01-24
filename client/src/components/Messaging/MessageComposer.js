@@ -88,7 +88,7 @@ const MessageComposer = () => {
         >
           <div className="mc-card-title">Broadcast</div>
           <input className="mc-input" placeholder="Category (optional)" value={broadcast.category} onChange={e => setBroadcast({ ...broadcast, category: e.target.value })} />
-          <textarea className="mc-textarea" placeholder="Message content" value={broadcast.content} onChange={e => setBroadcast({ ...broadcast, content: e.target.value })} rows={4} required />
+          <textarea className="mc-textarea" placeholder="Message content (max 200 characters)" value={broadcast.content} onChange={e => setBroadcast({ ...broadcast, content: e.target.value })} rows={4} required maxLength={200} />
           <button type="submit" className="mc-primary">Send Broadcast</button>
         </motion.form>
 
@@ -99,9 +99,9 @@ const MessageComposer = () => {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="mc-card-title">Private</div>
-          <input className="mc-input" placeholder="Student Matric Number" value={pm.studentId} onChange={e => setPm({ ...pm, studentId: e.target.value })} required />
+          <input className="mc-input" placeholder="User ID (student)" value={pm.studentId} onChange={e => setPm({ ...pm, studentId: e.target.value })} required />
           <input className="mc-input" placeholder="Category (optional)" value={pm.category} onChange={e => setPm({ ...pm, category: e.target.value })} />
-          <textarea className="mc-textarea" placeholder="Message content" value={pm.content} onChange={e => setPm({ ...pm, content: e.target.value })} rows={4} required />
+          <textarea className="mc-textarea" placeholder="Message content (max 200 characters)" value={pm.content} onChange={e => setPm({ ...pm, content: e.target.value })} rows={4} required maxLength={200} />
           <button type="submit" className="mc-primary">Send Private</button>
         </motion.form>
       </div>
@@ -124,6 +124,9 @@ const MessageComposer = () => {
               <span className="mc-category">{m.category || 'General'}</span>
             </div>
             <div className="mc-content">{m.content}</div>
+            <div className="mc-meta">
+              Sent at: {new Date(m.createdAt).toLocaleString()}
+            </div>
           </motion.div>
         ))}
       </div>

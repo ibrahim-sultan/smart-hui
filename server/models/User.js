@@ -50,6 +50,15 @@ const userSchema = new mongoose.Schema({
     enum: ['1st', '2nd', '3rd', '4th', '5th', null],
     default: null
   },
+  session: {
+    type: String,
+    default: null
+  },
+  level: {
+    type: String,
+    enum: ['100level', '200level', '300level', '400level', '500level', null],
+    default: null
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -86,6 +95,12 @@ userSchema.pre('save', function(next) {
   }
   if (this.staffId === '' || this.staffId === null) {
     this.staffId = undefined;
+  }
+  if (this.session === '') {
+    this.session = null;
+  }
+  if (this.level === '') {
+    this.level = null;
   }
   next();
 });

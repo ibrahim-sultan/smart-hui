@@ -765,22 +765,27 @@ router.post('/users/create', [
   body('email').isEmail(),
   body('department').notEmpty(),
   body('studentId').optional().isString(),
-  body('staffId').optional().isString()
+  body('staffId').optional().isString(),
+  body('userId').optional().isString(),
+  body('session').optional().isString(),
+  body('level').optional().isString()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { role, firstName, lastName, email, department, studentId, staffId, year } = req.body;
+    const { role, firstName, lastName, email, department, studentId, staffId, userId, year, session, level } = req.body;
     const existingEmail = await User.findOne({ email: email.toLowerCase() });
     if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
-    if (role === 'student' && studentId) {
-      const existingStudent = await User.findOne({ studentId });
+    const resolvedStudentId = role === 'student' ? (studentId || userId) : undefined;
+    const resolvedStaffId = role === 'staff' ? (staffId || userId) : undefined;
+    if (role === 'student' && resolvedStudentId) {
+      const existingStudent = await User.findOne({ studentId: resolvedStudentId });
       if (existingStudent) return res.status(400).json({ message: 'Student ID already exists' });
     }
-    if (role === 'staff' && staffId) {
-      const existingStaff = await User.findOne({ staffId });
+    if (role === 'staff' && resolvedStaffId) {
+      const existingStaff = await User.findOne({ staffId: resolvedStaffId });
       if (existingStaff) return res.status(400).json({ message: 'Staff ID already exists' });
     }
     const user = new User({
@@ -789,10 +794,12 @@ router.post('/users/create', [
       email: email.toLowerCase(),
       password: DEFAULT_USER_PASSWORD,
       role,
-      studentId: role === 'student' ? (studentId || undefined) : undefined,
-      staffId: role === 'staff' ? (staffId || undefined) : undefined,
+      studentId: role === 'student' ? (resolvedStudentId || undefined) : undefined,
+      staffId: role === 'staff' ? (resolvedStaffId || undefined) : undefined,
       department,
       year: year || null,
+      session: role === 'student' ? (session || null) : null,
+      level: role === 'student' ? (level || null) : null,
       isFirstLogin: true
     });
     await user.save();
@@ -837,12 +844,14 @@ router.post('/users/bulk', [
         if (!email) throw new Error('Email required');
         const exists = await User.findOne({ email });
         if (exists) { results.push({ email, status: 'skipped', reason: 'Email exists' }); continue; }
-        if (role === 'student' && u.studentId) {
-          const sidExists = await User.findOne({ studentId: u.studentId });
+        const resolvedStudentId = role === 'student' ? (u.studentId || u.userId || undefined) : undefined;
+        const resolvedStaffId = role === 'staff' ? (u.staffId || u.userId || undefined) : undefined;
+        if (role === 'student' && resolvedStudentId) {
+          const sidExists = await User.findOne({ studentId: resolvedStudentId });
           if (sidExists) { results.push({ email, status: 'skipped', reason: 'Student ID exists' }); continue; }
         }
-        if (role === 'staff' && u.staffId) {
-          const stidExists = await User.findOne({ staffId: u.staffId });
+        if (role === 'staff' && resolvedStaffId) {
+          const stidExists = await User.findOne({ staffId: resolvedStaffId });
           if (stidExists) { results.push({ email, status: 'skipped', reason: 'Staff ID exists' }); continue; }
         }
         const user = new User({
@@ -851,10 +860,12 @@ router.post('/users/bulk', [
           email,
           password: DEFAULT_USER_PASSWORD,
           role,
-          studentId: role === 'student' ? (u.studentId || undefined) : undefined,
-          staffId: role === 'staff' ? (u.staffId || undefined) : undefined,
+          studentId: role === 'student' ? (resolvedStudentId || undefined) : undefined,
+          staffId: role === 'staff' ? (resolvedStaffId || undefined) : undefined,
           department: u.department,
           year: u.year || null,
+          session: role === 'student' ? (u.session || null) : null,
+          level: role === 'student' ? (u.level || null) : null,
           isFirstLogin: true
         });
         await user.save();
@@ -878,8 +889,8 @@ router.post('/users/bulk', [
           firstName: u.firstName,
           lastName: u.lastName,
           department: u.department,
-          studentId: u.studentId || null,
-          staffId: u.staffId || null
+          studentId: resolvedStudentId || null,
+          staffId: resolvedStaffId || null
         });
       }
     }
