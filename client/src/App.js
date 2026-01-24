@@ -25,6 +25,7 @@ import AdminResetPassword from './components/AdminResetPassword/AdminResetPasswo
 import NotificationSystem from './components/NotificationSystem/NotificationSystem';
 import UserPasswordChange from './components/UserPasswordChange/UserPasswordChange';
 import UserResetPassword from './components/UserResetPassword/UserResetPassword';
+import UserForgotPassword from './components/UserForgotPassword/UserForgotPassword';
 import './App.css';
 
 // Main App component with routing
@@ -207,6 +208,18 @@ function AppContent() {
               transition={{ duration: 0.3 }}
             >
               <UserResetPassword />
+            </motion.div>
+          } />
+          
+          {/* User Forgot Password Route - Public */}
+          <Route path="/forgot-password" element={
+            <motion.div
+              initial={{ opacity: 0, x: -100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ duration: 0.3 }}
+            >
+              <UserForgotPassword />
             </motion.div>
           } />
           
