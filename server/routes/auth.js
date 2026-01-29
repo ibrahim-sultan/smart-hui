@@ -35,10 +35,13 @@ router.post('/login', [
     if (email) {
       user = await User.findOne({ email });
     } else {
+      const identNorm = (identifier || '').toLowerCase().replace(/\//g, '');
       user = await User.findOne({
         $or: [
           { studentId: identifier },
-          { staffId: identifier }
+          { staffId: identifier },
+          { studentId: identNorm },
+          { staffId: identNorm }
         ]
       });
     }

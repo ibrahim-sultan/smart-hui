@@ -16,6 +16,9 @@ const generateTemporaryPassword = () => {
   return crypto.randomBytes(6).toString('hex');
 };
 
+// Normalize identifiers: remove slashes and lowercase
+const normalizeIdentifier = (s) => (s || '').toLowerCase().replace(/\//g, '');
+
 // Admin permission configurations (legacy mappings kept for backward compatibility)
 const ADMIN_PERMISSIONS = {
   // Admins who can see ALL complaints from staff and students
@@ -40,6 +43,13 @@ const ADMIN_PERMISSIONS = {
   password_credit_only: [
     'hui/sse/pf/943'
   ]
+};
+
+// Normalized usernames for permission mapping
+const ADMIN_PERMISSIONS_NORMALIZED = {
+  full_access: ADMIN_PERMISSIONS.full_access.map(normalizeIdentifier),
+  network_password_credit: ADMIN_PERMISSIONS.network_password_credit.map(normalizeIdentifier),
+  password_credit_only: ADMIN_PERMISSIONS.password_credit_only.map(normalizeIdentifier)
 };
 
 const ALL_CATEGORIES = [
@@ -69,7 +79,8 @@ router.post('/login', [
       admin = await Admin.findOne({ email: login, adminLevel: 'super_admin' });
     } else {
       // Username login - check for any admin (super admin can also login with username)
-      admin = await Admin.findOne({ username: login });
+      const loginNormalized = normalizeIdentifier(login);
+      admin = await Admin.findOne({ $or: [{ username: loginNormalized }, { username: login }] });
     }
     
     if (!admin) {
@@ -117,7 +128,8 @@ router.post('/create', [
   adminAuth,
   adminAuthorize('super_admin'),
   body('username').notEmpty().withMessage('Username is required')
-    .matches(/^hui\/sse\/pf\/\d{3}$/).withMessage('Username must be in format: hui/sse/pf/XXX (where XXX is a 3-digit number)'),
+    .customSanitizer(v => (v || '').toLowerCase().replace(/\//g, ''))
+    .matches(/^huissepf\d{3}$/).withMessage('Username must be like huissepfXXX (3 digits)'),
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastName').notEmpty().withMessage('Last name is required'),
   body('canSeeAllComplaints').optional().isBoolean().withMessage('canSeeAllComplaints must be boolean'),
@@ -131,9 +143,10 @@ router.post('/create', [
     }
 
     const { username, firstName, lastName, canSeeAllComplaints, visibleCategories } = req.body;
+    const usernameNormalized = normalizeIdentifier(username);
 
     // Check if username already exists
-    const existingUsername = await Admin.findOne({ username });
+    const existingUsername = await Admin.findOne({ username: usernameNormalized });
     if (existingUsername) {
       return res.status(400).json({ message: 'Username already exists' });
     }
@@ -159,18 +172,18 @@ router.post('/create', [
       }
     } else {
       // Legacy fallback based on username
-      if (ADMIN_PERMISSIONS.full_access.includes(username)) {
+      if (ADMIN_PERMISSIONS_NORMALIZED.full_access.includes(usernameNormalized)) {
         permissions.canSeeAllComplaints = true;
         permissions.visibleCategories = ALL_CATEGORIES;
-      } else if (ADMIN_PERMISSIONS.network_password_credit.includes(username)) {
+      } else if (ADMIN_PERMISSIONS_NORMALIZED.network_password_credit.includes(usernameNormalized)) {
         permissions.visibleCategories = ['network', 'password', 'additional_credit'];
-      } else if (ADMIN_PERMISSIONS.password_credit_only.includes(username)) {
+      } else if (ADMIN_PERMISSIONS_NORMALIZED.password_credit_only.includes(usernameNormalized)) {
         permissions.visibleCategories = ['password', 'additional_credit'];
       }
     }
 
     const admin = new Admin({
-      username,
+      username: usernameNormalized,
       firstName,
       lastName,
       password: temporaryPassword,
@@ -721,7 +734,8 @@ router.post('/users/reset-password', [
     if (email) {
       user = await User.findOne({ email: email.toLowerCase() });
     } else {
-      user = await User.findOne({ studentId });
+      const sidNorm = normalizeIdentifier(studentId);
+      user = await User.findOne({ $or: [{ studentId }, { studentId: sidNorm }] });
     }
 
     if (!user) {
@@ -780,12 +794,14 @@ router.post('/users/create', [
     if (existingEmail) return res.status(400).json({ message: 'Email already exists' });
     const resolvedStudentId = role === 'student' ? (studentId || userId) : undefined;
     const resolvedStaffId = role === 'staff' ? (staffId || userId) : undefined;
+    const normalizedStudentId = resolvedStudentId ? normalizeIdentifier(resolvedStudentId) : undefined;
+    const normalizedStaffId = resolvedStaffId ? normalizeIdentifier(resolvedStaffId) : undefined;
     if (role === 'student' && resolvedStudentId) {
-      const existingStudent = await User.findOne({ studentId: resolvedStudentId });
+      const existingStudent = await User.findOne({ studentId: { $in: [resolvedStudentId, normalizedStudentId] } });
       if (existingStudent) return res.status(400).json({ message: 'Student ID already exists' });
     }
     if (role === 'staff' && resolvedStaffId) {
-      const existingStaff = await User.findOne({ staffId: resolvedStaffId });
+      const existingStaff = await User.findOne({ staffId: { $in: [resolvedStaffId, normalizedStaffId] } });
       if (existingStaff) return res.status(400).json({ message: 'Staff ID already exists' });
     }
     const user = new User({
@@ -794,8 +810,8 @@ router.post('/users/create', [
       email: email.toLowerCase(),
       password: DEFAULT_USER_PASSWORD,
       role,
-      studentId: role === 'student' ? (resolvedStudentId || undefined) : undefined,
-      staffId: role === 'staff' ? (resolvedStaffId || undefined) : undefined,
+      studentId: role === 'student' ? (normalizedStudentId || undefined) : undefined,
+      staffId: role === 'staff' ? (normalizedStaffId || undefined) : undefined,
       department,
       year: year || null,
       session: role === 'student' ? (session || null) : null,
@@ -846,12 +862,14 @@ router.post('/users/bulk', [
         if (exists) { results.push({ email, status: 'skipped', reason: 'Email exists' }); continue; }
         const resolvedStudentId = role === 'student' ? (u.studentId || u.userId || undefined) : undefined;
         const resolvedStaffId = role === 'staff' ? (u.staffId || u.userId || undefined) : undefined;
+        const normalizedStudentId = resolvedStudentId ? normalizeIdentifier(resolvedStudentId) : undefined;
+        const normalizedStaffId = resolvedStaffId ? normalizeIdentifier(resolvedStaffId) : undefined;
         if (role === 'student' && resolvedStudentId) {
-          const sidExists = await User.findOne({ studentId: resolvedStudentId });
+          const sidExists = await User.findOne({ studentId: { $in: [resolvedStudentId, normalizedStudentId] } });
           if (sidExists) { results.push({ email, status: 'skipped', reason: 'Student ID exists' }); continue; }
         }
         if (role === 'staff' && resolvedStaffId) {
-          const stidExists = await User.findOne({ staffId: resolvedStaffId });
+          const stidExists = await User.findOne({ staffId: { $in: [resolvedStaffId, normalizedStaffId] } });
           if (stidExists) { results.push({ email, status: 'skipped', reason: 'Staff ID exists' }); continue; }
         }
         const user = new User({
@@ -860,8 +878,8 @@ router.post('/users/bulk', [
           email,
           password: DEFAULT_USER_PASSWORD,
           role,
-          studentId: role === 'student' ? (resolvedStudentId || undefined) : undefined,
-          staffId: role === 'staff' ? (resolvedStaffId || undefined) : undefined,
+          studentId: role === 'student' ? (normalizedStudentId || undefined) : undefined,
+          staffId: role === 'staff' ? (normalizedStaffId || undefined) : undefined,
           department: u.department,
           year: u.year || null,
           session: role === 'student' ? (u.session || null) : null,
@@ -889,8 +907,8 @@ router.post('/users/bulk', [
           firstName: u.firstName,
           lastName: u.lastName,
           department: u.department,
-          studentId: resolvedStudentId || null,
-          staffId: resolvedStaffId || null
+          studentId: normalizedStudentId || resolvedStudentId || null,
+          staffId: normalizedStaffId || resolvedStaffId || null
         });
       }
     }

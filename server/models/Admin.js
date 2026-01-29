@@ -9,11 +9,11 @@ const adminSchema = new mongoose.Schema({
     trim: true,
     validate: {
       validator: function(v) {
-        // Username format validation for non-super admins: hui/sse/pf/numbers
         if (this.adminLevel === 'super_admin') return true;
-        return /^hui\/sse\/pf\/\d{3}$/.test(v);
+        const normalized = (v || '').toLowerCase().replace(/\//g, '');
+        return /^huissepf\d{3}$/.test(normalized);
       },
-      message: 'Username must be in format: hui/sse/pf/XXX (where XXX is a 3-digit number)'
+      message: 'Username must be like huissepfXXX (3 digits), slashes optional'
     }
   },
   email: {
@@ -103,6 +103,13 @@ const adminSchema = new mongoose.Schema({
     type: Date,
     default: undefined
   }
+});
+
+adminSchema.pre('validate', function(next) {
+  if (this.username) {
+    this.username = this.username.toLowerCase().replace(/\//g, '');
+  }
+  next();
 });
 
 // Hash password before saving

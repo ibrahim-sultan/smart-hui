@@ -6,6 +6,8 @@ const User = require('../models/User');
 
 const router = express.Router();
 
+const normalizeIdentifier = (s) => (s || '').toLowerCase().replace(/\//g, '');
+
 router.post('/', auth, authorize('staff'), async (req, res) => {
   try {
     const { code, title, faculty, department, semester, session, startDate, endDate } = req.body;
@@ -72,7 +74,8 @@ router.post('/:courseId/enroll', auth, authorize('staff'), async (req, res) => {
     if (String(course.lecturer) !== String(req.user._id)) return res.status(403).json({ message: 'Not course lecturer' });
     const { studentIds } = req.body;
     if (!Array.isArray(studentIds) || studentIds.length === 0) return res.status(400).json({ message: 'Provide studentIds' });
-    const students = await User.find({ studentId: { $in: studentIds }, role: 'student' });
+    const normalizedSet = Array.from(new Set([].concat(studentIds.map(id => normalizeIdentifier(id)), studentIds)));
+    const students = await User.find({ studentId: { $in: normalizedSet }, role: 'student' });
     const ops = students.map(s => ({ updateOne: { filter: { course: course._id, student: s._id }, update: { course: course._id, student: s._id }, upsert: true } }));
     if (ops.length > 0) await Enrollment.bulkWrite(ops);
     const foundIds = students.map(s => s.studentId);
@@ -89,7 +92,8 @@ router.delete('/:courseId/enroll/:studentId', auth, authorize('staff'), async (r
     const course = await Course.findById(req.params.courseId);
     if (!course) return res.status(404).json({ message: 'Course not found' });
     if (String(course.lecturer) !== String(req.user._id)) return res.status(403).json({ message: 'Not course lecturer' });
-    const student = await User.findOne({ studentId: req.params.studentId, role: 'student' });
+    const sidNorm = normalizeIdentifier(req.params.studentId);
+    const student = await User.findOne({ role: 'student', $or: [{ studentId: req.params.studentId }, { studentId: sidNorm }] });
     if (!student) return res.status(404).json({ message: 'Student not found' });
     await Enrollment.deleteOne({ course: course._id, student: student._id });
     res.json({ removed: req.params.studentId });
