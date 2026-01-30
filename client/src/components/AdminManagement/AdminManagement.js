@@ -428,7 +428,7 @@ const AdminManagement = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'users_template.csv';
+    a.download = 'users_template_v2.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -699,7 +699,7 @@ const AdminManagement = () => {
         </p>
         <div className="form-group">
           <button type="button" className="reset-btn" onClick={handleTemplateDownload}>
-            Download CSV Template
+            Download CSV Template (v2)
           </button>
         </div>
         <div className="form-group">
