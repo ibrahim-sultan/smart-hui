@@ -368,16 +368,26 @@ const AdminManagement = () => {
             return;
           }
           // normalize to API expected shape
-          const users = items.map(u => ({
-            role: (u.role || '').toLowerCase() === 'staff' ? 'staff' : 'student',
-            firstName: u.firstName || '',
-            lastName: u.lastName || '',
-            email: u.email || '',
-            department: u.department || '',
-            studentId: u.studentId ? u.studentId : undefined,
-            staffId: u.staffId ? u.staffId : undefined,
-            year: u.year ? u.year : null
-          }));
+          const users = items.map(u => {
+            const role = (u.role || '').toLowerCase() === 'staff' ? 'staff' : 'student';
+            const id = u['studentId/staffId'] || u.studentId || u.staffId || u.userId || '';
+            const session = u.session || null;
+            const levelRaw = (u.level || '').toString().trim();
+            const levelMap = levelRaw
+              ? (/^\d{3}$/.test(levelRaw) ? `${levelRaw}level` : levelRaw.toLowerCase())
+              : '';
+            return {
+              role,
+              firstName: u.firstName || '',
+              lastName: u.lastName || '',
+              email: u.email || '',
+              department: u.department || '',
+              studentId: role === 'student' ? (id || undefined) : undefined,
+              staffId: role === 'staff' ? (id || undefined) : undefined,
+              session: role === 'student' ? (session || null) : null,
+              level: role === 'student' ? (levelMap || null) : null
+            };
+          });
           setBulkLoading(true);
           const adminToken = localStorage.getItem('adminToken');
           const response = await axios.post('/api/admin/users/bulk', { users }, {
@@ -410,9 +420,9 @@ const AdminManagement = () => {
   };
 
   const handleTemplateDownload = () => {
-    const headers = ['role','firstName','lastName','email','department','studentId','staffId','year'].join(',');
-    const row1 = ['student','Ada','Lovelace','ada@example.com','Computer Science','HUI/CSC/21/001','1st'].join(',');
-    const row2 = ['staff','Grace','Hopper','grace@example.com','ICT','','STAFF/ICT/001',''].join(',');
+    const headers = ['role','firstName','lastName','email','department','studentId/staffId','session','level'].join(',');
+    const row1 = ['student','Ada','Lovelace','ada@example.com','Computer Science','1303cs030','2025/2026','100'].join(',');
+    const row2 = ['staff','Grace','Hopper','grace@example.com','ICT','huissepf001','',''].join(',');
     const csv = `${headers}\n${row1}\n${row2}\n`;
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -685,7 +695,7 @@ const AdminManagement = () => {
       <div className="user-password-reset">
         <h3>Bulk Onboard Students/Staff</h3>
           <p className="section-help">
-          Paste a JSON array of users with keys: role (student|staff), firstName, lastName, email, department, userId, session (student), level (student).
+          Use CSV with headers: role, firstName, lastName, email, department, studentId/staffId, session, level. Level can be 100/200/... and will be mapped automatically.
         </p>
         <div className="form-group">
           <button type="button" className="reset-btn" onClick={handleTemplateDownload}>
@@ -693,7 +703,7 @@ const AdminManagement = () => {
           </button>
         </div>
         <div className="form-group">
-          <label>Upload CSV (role,firstName,lastName,email,department,studentId,year)</label>
+          <label>Upload CSV (role,firstName,lastName,email,department,studentId/staffId,session,level)</label>
           <input
             type="file"
             accept=".csv,text/csv"
