@@ -57,15 +57,20 @@ router.post('/forgot-password', [
     `;
 
     if (resend) {
-      const from = process.env.RESEND_FROM || 'Smart HUI <onboarding@resend.dev>';
-      const result = await resend.emails.send({
-        from,
-        to: email,
-        subject: 'Password Reset Request',
-        html
-      });
+      const preferredFrom = process.env.RESEND_FROM || '';
+      const isValidFrom = (s) => /^([^<>]+<[^<>@]+@[^<>@]+\.[^<>]+>|[^<>@]+@[^<>@]+\.[^<>]+)$/.test(s);
+      let from = isValidFrom(preferredFrom) ? preferredFrom : 'Smart HUI <onboarding@resend.dev>';
+      let result = await resend.emails.send({ from, to: email, subject: 'Password Reset Request', html });
       if (result.error) {
-        return res.status(500).json({ message: result.error.message || 'Failed to send reset email' });
+        if (from !== 'Smart HUI <onboarding@resend.dev>') {
+          from = 'Smart HUI <onboarding@resend.dev>';
+          result = await resend.emails.send({ from, to: email, subject: 'Password Reset Request', html });
+          if (result.error) {
+            return res.status(500).json({ message: result.error.message || 'Failed to send reset email' });
+          }
+        } else {
+          return res.status(500).json({ message: result.error.message || 'Failed to send reset email' });
+        }
       }
     } else if (transporter) {
       await transporter.sendMail({
