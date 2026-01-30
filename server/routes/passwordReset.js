@@ -57,7 +57,7 @@ router.post('/forgot-password', [
     `;
 
     if (resend) {
-      const from = process.env.RESEND_FROM || 'Smart HUI <noreply@smart-hui.dev>';
+      const from = process.env.RESEND_FROM || 'Smart HUI <onboarding@resend.dev>';
       const result = await resend.emails.send({
         from,
         to: email,
@@ -65,7 +65,7 @@ router.post('/forgot-password', [
         html
       });
       if (result.error) {
-        throw new Error(result.error.message || 'Resend email failed');
+        return res.status(500).json({ message: result.error.message || 'Failed to send reset email' });
       }
     } else if (transporter) {
       await transporter.sendMail({
@@ -81,7 +81,7 @@ router.post('/forgot-password', [
     res.json({ message: 'Password reset email sent successfully' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: error.message || 'Server error' });
   }
 });
 
