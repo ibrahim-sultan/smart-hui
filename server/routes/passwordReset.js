@@ -3,20 +3,21 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
 
-// Configure nodemailer
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+// Configure Resend (preferred) and fallback nodemailer
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const transporter = (!resend && process.env.EMAIL_USER && process.env.EMAIL_PASS)
+  ? nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    })
+  : null;
 
-// @route   POST /api/auth/forgot-password
+// @route   POST /api/password-reset/forgot-password
 // @desc    Send password reset email
 // @access  Public
 router.post('/forgot-password', [
@@ -47,20 +48,35 @@ router.post('/forgot-password', [
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     // Email content
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Password Reset Request',
-      html: `
-        <h2>Password Reset Request</h2>
-        <p>You have requested a password reset. Please click the link below to reset your password:</p>
-        <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
-        <p>This link will expire in 1 hour.</p>
-        <p>If you did not request this, please ignore this email.</p>
-      `
-    };
+    const html = `
+      <h2>Password Reset Request</h2>
+      <p>You have requested a password reset. Please click the link below to reset your password:</p>
+      <a href="${resetUrl}" style="background-color: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Reset Password</a>
+      <p>This link will expire in 1 hour.</p>
+      <p>If you did not request this, please ignore this email.</p>
+    `;
 
-    await transporter.sendMail(mailOptions);
+    if (resend) {
+      const from = process.env.RESEND_FROM || 'Smart HUI <noreply@smart-hui.dev>';
+      const result = await resend.emails.send({
+        from,
+        to: email,
+        subject: 'Password Reset Request',
+        html
+      });
+      if (result.error) {
+        throw new Error(result.error.message || 'Resend email failed');
+      }
+    } else if (transporter) {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Password Reset Request',
+        html
+      });
+    } else {
+      return res.status(500).json({ message: 'Email provider not configured' });
+    }
 
     res.json({ message: 'Password reset email sent successfully' });
   } catch (error) {
@@ -69,7 +85,7 @@ router.post('/forgot-password', [
   }
 });
 
-// @route   POST /api/auth/reset-password/:token
+// @route   POST /api/password-reset/reset-password/:token
 // @desc    Reset password with token
 // @access  Public
 router.post('/reset-password/:token', [
