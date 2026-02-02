@@ -2,20 +2,12 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
-const nodemailer = require('nodemailer');
-const { Resend } = require('resend');
+const { ServerClient } = require('postmark');
 const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
 
-// Configure Resend (preferred) and fallback nodemailer
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const transporter = (!resend && process.env.EMAIL_USER && process.env.EMAIL_PASS)
-  ? nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-    })
-  : null;
+const postmarkClient = process.env.POSTMARK_SERVER_TOKEN ? new ServerClient(process.env.POSTMARK_SERVER_TOKEN) : null;
 
 // @route   POST /api/password-reset/forgot-password
 // @desc    Send password reset email
@@ -56,31 +48,22 @@ router.post('/forgot-password', [
       <p>If you did not request this, please ignore this email.</p>
     `;
 
-    if (resend) {
-      const preferredFrom = process.env.RESEND_FROM || '';
-      const isValidFrom = (s) => /^([^<>]+<[^<>@]+@[^<>@]+\.[^<>]+>|[^<>@]+@[^<>@]+\.[^<>]+)$/.test(s);
-      let from = isValidFrom(preferredFrom) ? preferredFrom : 'Smart HUI <onboarding@resend.dev>';
-      let result = await resend.emails.send({ from, to: email, subject: 'Password Reset Request', html });
-      if (result.error) {
-        if (from !== 'Smart HUI <onboarding@resend.dev>') {
-          from = 'Smart HUI <onboarding@resend.dev>';
-          result = await resend.emails.send({ from, to: email, subject: 'Password Reset Request', html });
-          if (result.error) {
-            return res.status(500).json({ message: result.error.message || 'Failed to send reset email' });
-          }
-        } else {
-          return res.status(500).json({ message: result.error.message || 'Failed to send reset email' });
-        }
-      }
-    } else if (transporter) {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'Password Reset Request',
-        html
-      });
-    } else {
+    if (!postmarkClient) {
       return res.status(500).json({ message: 'Email provider not configured' });
+    }
+    const from = process.env.POSTMARK_FROM;
+    if (!from) {
+      return res.status(500).json({ message: 'Email sender address not configured' });
+    }
+    try {
+      await postmarkClient.sendEmail({
+        From: from,
+        To: email,
+        Subject: 'Password Reset Request',
+        HtmlBody: html
+      });
+    } catch (e) {
+      return res.status(500).json({ message: e.message || 'Failed to send reset email' });
     }
 
     res.json({ message: 'Password reset email sent successfully' });
